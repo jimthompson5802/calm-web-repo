@@ -2,6 +2,9 @@
 
 Minimal scaffold for serving public FINOS CALM JSON content with Nginx while keeping Python and TypeScript application work ready to start.
 
+## Findings
+- [`docs/usage-notes.md`](docs/usage-notes.md) summarizes findings of using `calm cli` with resources from web vs local files.
+
 ## Layout
 
 - `static/architectures/` holds CALM architecture JSON files.
@@ -24,7 +27,8 @@ Minimal scaffold for serving public FINOS CALM JSON content with Nginx while kee
 ## Commands
 
 - `make bootstrap` shows dependency install commands.
-- `make serve-static` starts Nginx on `http://localhost:8080`.
+- `make start-web-server` starts Nginx on `http://localhost:8080` in detached mode.
+- `make stop-web-server` stops the Nginx service and removes the Compose resources.
 - `make test-api` runs the Python API tests.
 - `make typecheck-web` runs the TypeScript typecheck.
 
@@ -32,7 +36,7 @@ Minimal scaffold for serving public FINOS CALM JSON content with Nginx while kee
 
 Static content is intentionally anonymous and public at this stage.
 
-Sample public URLs after `make serve-static`:
+Sample public URLs after `make start-web-server`:
 
 - `http://localhost:8080/architectures/sample-architecture.json`
 - `http://localhost:8080/patterns/sample-pattern.json`
@@ -59,7 +63,15 @@ npm install
 Run the static server:
 
 ```sh
-make serve-static
+make start-web-server
+```
+
+## Stop
+
+Stop the static server and remove the Compose resources:
+
+```sh
+make stop-web-server
 ```
 
 Run the API directly:
