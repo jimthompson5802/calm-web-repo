@@ -9,14 +9,14 @@
       "type": "array",
       "description": "All nodes must conform to the Company Node Standard.",
       "items": {
-        "$ref": "https://example.com/standards/company-node-standard.json"
+        "$ref": "http://localhost:8080/standards/company-node-standard.json"
       }
     },
     "relationships": {
       "type": "array",
       "description": "All relationships must conform to the Company Relationship Standard.",
       "items": {
-        "$ref": "https://example.com/standards/company-relationship-standard.json"
+        "$ref": "http://localhost:8080/standards/company-relationship-standard.json"
       }
     }
   }
