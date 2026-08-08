@@ -40,6 +40,5 @@
             "description": "Whether anomalous activity triggers real-time alerts"
         }
     },
-    "required": ["log-level", "retention-days", "immutable-storage", "events"],
-    "additionalProperties": false
+    "required": ["log-level", "retention-days", "immutable-storage", "events"]
 }

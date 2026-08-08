@@ -20,6 +20,5 @@
             "description": "Whether data is automatically deleted when the retention period expires"
         }
     },
-    "required": ["retention-period", "archival-strategy", "deletion-on-expiry"],
-    "additionalProperties": false
+    "required": ["retention-period", "archival-strategy", "deletion-on-expiry"]
 }

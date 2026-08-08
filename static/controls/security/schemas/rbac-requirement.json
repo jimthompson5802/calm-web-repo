@@ -27,6 +27,5 @@
             "description": "Frequency of privileged access reviews in days"
         }
     },
-    "required": ["model", "mfa-required", "session-timeout-minutes", "privileged-access-review-days"],
-    "additionalProperties": false
+    "required": ["model", "mfa-required", "session-timeout-minutes", "privileged-access-review-days"]
 }

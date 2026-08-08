@@ -22,6 +22,5 @@
             "description": "Encryption key rotation interval in days"
         }
     },
-    "required": ["algorithm", "key-management", "key-rotation-days"],
-    "additionalProperties": false
+    "required": ["algorithm", "key-management", "key-rotation-days"]
 }

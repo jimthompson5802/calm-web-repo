@@ -35,6 +35,5 @@
             "description": "Certificate rotation interval in days"
         }
     },
-    "required": ["protocol", "version", "cipher-suites", "certificate-authority", "cert-rotation-days"],
-    "additionalProperties": false
+    "required": ["protocol", "version", "cipher-suites", "certificate-authority", "cert-rotation-days"]
 }
