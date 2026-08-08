@@ -1,15 +1,15 @@
 ## Notes as of 2026-08-08
 
-## Test of validating architectures with `details.detailed-architecture` references
+## Test of validating architectures with `details.detailed-architecture` references, pattern/standards and controls
 
 ```
-$ ./scripts/validate-detailed-architecture.sh 
-+ printf '\n\nValidating top level CALM architecture files with valid detailed architectures...NO Errors\n'
+$ ./scripts/validate-architecture.sh 
++ printf '\n\nValidating top level CALM architecture files with valid detailed architectures...NO ERRORS EXPECTED\n'
 
 
-Validating top level CALM architecture files with valid detailed architectures...NO Errors
+Validating top level CALM architecture files with valid detailed architectures...NO ERRORS EXPECTED
 + calm validate -a http://localhost:8080/architectures/calm-3.json
-(node:76841) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:67439) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
 info [calm-cli]:     Using allowed remote hosts from config file
@@ -20,12 +20,12 @@ info [calm-validate]:     Formatting output as json
     "spectralSchemaValidationOutputs": [],
     "hasErrors": false,
     "hasWarnings": false
-}+ printf '\n\nValid detailed architecture file...NO Errors\n'
+}+ printf '\n\nValid detailed architecture file...NO ERRORS EXPECTED\n'
 
 
-Valid detailed architecture file...NO Errors
+Valid detailed architecture file...NO ERRORS EXPECTED
 + calm validate -a http://localhost:8080/architectures/calm-hub-detail.architecture.json
-(node:76842) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:67440) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
 info [calm-cli]:     Using allowed remote hosts from config file
@@ -42,7 +42,7 @@ info [calm-validate]:     Formatting output as json
 
 Valid top-level architecture that references a detailed architecture with an error in it. No Errors flagged
 + calm validate -a http://localhost:8080/architectures/calm-3-ref-bad.json
-(node:76843) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:67454) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
 info [calm-cli]:     Using allowed remote hosts from config file
@@ -53,13 +53,13 @@ info [calm-validate]:     Formatting output as json
     "spectralSchemaValidationOutputs": [],
     "hasErrors": false,
     "hasWarnings": false
-}+ printf '\n\n\nDetailed architecture with an error in it. ERRORS flagged\n'
+}+ printf '\n\n\nDetailed architecture with an error in it. ERRORS EXPECTED\n'
 
 
 
-Detailed architecture with an error in it. ERRORS flagged
+Detailed architecture with an error in it. ERRORS EXPECTED
 + calm validate -a http://localhost:8080/architectures/calm-hub-detail.architecture-bad.json
-(node:76846) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:67455) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
 info [calm-cli]:     Using allowed remote hosts from config file
@@ -95,6 +95,40 @@ info [calm-validate]:     Formatting output as json
     ],
     "hasErrors": true,
     "hasWarnings": true
+}+ printf '\n\n\nValidate architecture against pattern/standards NO ERRORS EXPECTED\n'
+
+
+
+Validate architecture against pattern/standards NO ERRORS EXPECTED
++ calm validate -a http://localhost:8080/architectures/generated-webapp.json -p http://localhost:8080/patterns/company-base-pattern.json
+(node:67458) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
+info [calm-cli]:     Using allowed remote hosts from config file
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: http://localhost:8080
+info [calm-validate]:     Formatting output as json
+{
+    "jsonSchemaValidationOutputs": [],
+    "spectralSchemaValidationOutputs": [],
+    "hasErrors": false,
+    "hasWarnings": false
+}+ printf '\n\n\nValidate architecture with Controls.  NO ERRORS EXPECTED\n'
+
+
+
+Validate architecture with Controls.  NO ERRORS EXPECTED
++ calm validate -a http://localhost:8080/architectures/ecommerce-platform.json
+(node:67459) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
+info [calm-cli]:     Using allowed remote hosts from config file
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: http://localhost:8080
+info [calm-validate]:     Formatting output as json
+{
+    "jsonSchemaValidationOutputs": [],
+    "spectralSchemaValidationOutputs": [],
+    "hasErrors": false,
+    "hasWarnings": false
 ```
 
 ## Web server capable commands (can fetch CALM docs over HTTP/HTTPS)
