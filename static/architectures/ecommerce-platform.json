@@ -27,15 +27,15 @@
             "description": "Data encryption and secure communication requirements",
             "requirements": [
                 {
-                    "requirement-url": "https://internal-policy.example.com/security/encryption-at-rest",
+                    "requirement-url": "http://localhost:8080/controls/security/encryption-at-rest",
                     "config": {
                         "algorithm": "AES-256",
                         "scope": "all-data-stores"
                     }
                 },
                 {
-                    "requirement-url": "https://internal-policy.example.com/security/tls-1-3-minimum",
-                    "config-url": "https://configs.example.com/security/tls-config.yaml"
+                    "requirement-url": "http://localhost:8080/controls/security/tls-1-3-minimum",
+                    "config-url": "http://localhost:8080/controls/security/tls-config.yaml"
                 }
             ]
         },
@@ -43,15 +43,15 @@
             "description": "System-wide performance and scalability requirements",
             "requirements": [
                 {
-                    "requirement-url": "https://internal-policy.example.com/performance/response-time-sla",
+                    "requirement-url": "http://localhost:8080/controls/performance/response-time-sla",
                     "config": {
                         "p99-latency-ms": 200,
                         "p95-latency-ms": 100
                     }
                 },
                 {
-                    "requirement-url": "https://internal-policy.example.com/performance/availability-target",
-                    "config-url": "https://configs.example.com/infra/ha-config.yaml"
+                    "requirement-url": "http://localhost:8080/controls/performance/availability-target",
+                    "config-url": "http://localhost:8080/controls/infra/ha-config.yaml"
                 }
             ]
         },
@@ -59,7 +59,7 @@
             "description": "All tier-1 services must meet the platform-wide availability target of 99.9% uptime, measured monthly",
             "requirements": [
                 {
-                    "requirement-url": "https://internal-policy.example.com/resilience/availability-sla",
+                    "requirement-url": "http://localhost:8080/controls/resilience/availability-sla",
                     "config": {
                         "target-uptime-percent": 99.9,
                         "measurement-window": "monthly",
@@ -112,7 +112,7 @@
                     "description": "All order processing steps must be logged for audit compliance",
                     "requirements": [
                         {
-                            "requirement-url": "https://internal-policy.example.com/audit/transaction-logging",
+                            "requirement-url": "http://localhost:8080/controls/audit/transaction-logging",
                             "config": {
                                 "log-level": "detailed",
                                 "retention-days": 365
@@ -245,11 +245,11 @@
                     "description": "API Gateway rate limiting and caching requirements",
                     "requirements": [
                         {
-                            "requirement-url": "https://internal-policy.example.com/performance/rate-limiting",
-                            "config-url": "https://configs.example.com/gateway/rate-limits.yaml"
+                            "requirement-url": "http://localhost:8080/controls/performance/rate-limiting",
+                            "config-url": "http://localhost:8080/controls/gateway/rate-limits.yaml"
                         },
                         {
-                            "requirement-url": "https://internal-policy.example.com/performance/caching-policy",
+                            "requirement-url": "http://localhost:8080/controls/performance/caching-policy",
                             "config": {
                                 "default-ttl-seconds": 300,
                                 "cache-control": "private"
@@ -294,11 +294,11 @@
                     "description": "API Gateway rate limiting and caching requirements",
                     "requirements": [
                         {
-                            "requirement-url": "https://internal-policy.example.com/performance/rate-limiting",
-                            "config-url": "https://configs.example.com/gateway/rate-limits.yaml"
+                            "requirement-url": "http://localhost:8080/controls/performance/rate-limiting",
+                            "config-url": "http://localhost:8080/controls/gateway/rate-limits.yaml"
                         },
                         {
-                            "requirement-url": "https://internal-policy.example.com/performance/caching-policy",
+                            "requirement-url": "http://localhost:8080/controls/performance/caching-policy",
                             "config": {
                                 "default-ttl-seconds": 300,
                                 "cache-control": "private"
@@ -364,7 +364,7 @@
                     "description": "Circuit breaker thresholds for Order Service outbound calls to protect against cascading failures",
                     "requirements": [
                         {
-                            "requirement-url": "https://internal-policy.example.com/resilience/circuit-breaker-policy",
+                            "requirement-url": "http://localhost:8080/controls/resilience/circuit-breaker-policy",
                             "config": {
                                 "failure-rate-threshold-percent": 50,
                                 "slow-call-rate-threshold-percent": 80,
@@ -487,7 +487,7 @@
                     "requirements": [
                         {
                             "requirement-url": "https://www.pcisecuritystandards.org/documents/PCI-DSS-v4.0",
-                            "config-url": "https://configs.example.com/compliance/pci-dss-config.json"
+                            "config-url": "http://localhost:8080/controls/compliance/pci-dss-config.json"
                         }
                     ]
                 }
@@ -563,7 +563,7 @@
                     "description": "Recovery time and recovery point objectives for the order database cluster in the event of a primary node failure",
                     "requirements": [
                         {
-                            "requirement-url": "https://internal-policy.example.com/resilience/database-failover-rto-rpo",
+                            "requirement-url": "http://localhost:8080/controls/resilience/database-failover-rto-rpo",
                             "config": {
                                 "rto-seconds": 30,
                                 "rpo-seconds": 5,

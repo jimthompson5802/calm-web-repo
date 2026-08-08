@@ -1,15 +1,16 @@
 # calm-web-repo
 
-Minimal scaffold for serving public FINOS CALM JSON content with Nginx while keeping Python and TypeScript application work ready to start.
+Repository for serving public FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work.
 
-## Findings
-- [`docs/usage-notes.md`](docs/usage-notes.md) summarizes findings of using `calm cli` with resources from web vs local files.
+## Documentation
+- `docs/usage-notes.md` captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
 
 ## Layout
 
 - `static/architectures/` holds CALM architecture JSON files.
 - `static/patterns/` holds CALM pattern JSON files.
 - `static/standards/` holds CALM standard JSON files.
+- `static/controls/` holds CALM control requirement schemas and control configuration JSON files.
 - `apps/api/` holds the Python service scaffold.
 - `apps/web/` holds the TypeScript web scaffold.
 - `infra/nginx/` holds the Nginx config.
@@ -21,7 +22,7 @@ Minimal scaffold for serving public FINOS CALM JSON content with Nginx while kee
 - Docker and `docker-compose`
 - Python 3.12+
 - `uv`
-- Node.js 26+
+- Node.js (LTS recommended)
 - npm
 
 ## Commands
@@ -32,15 +33,23 @@ Minimal scaffold for serving public FINOS CALM JSON content with Nginx while kee
 - `make test-api` runs the Python API tests.
 - `make typecheck-web` runs the TypeScript typecheck.
 
+## Validation
+
+- `docker-compose config` validates Compose configuration.
+- `make test-api` validates Python API behavior.
+- `make typecheck-web` validates TypeScript types.
+- `./scripts/validate-detailed-architecture.sh` runs CALM validation checks for detailed architecture references.
+
 ## Static Content
 
 Static content is intentionally anonymous and public at this stage.
 
 Sample public URLs after `make start-web-server`:
 
-- `http://localhost:8080/architectures/sample-architecture.json`
-- `http://localhost:8080/patterns/sample-pattern.json`
-- `http://localhost:8080/standards/sample-standard.json`
+- `http://localhost:8080/architectures/calm-1.json`
+- `http://localhost:8080/patterns/company-base-pattern.json`
+- `http://localhost:8080/standards/company-node-standard.json`
+- `http://localhost:8080/controls/security/schemas/tls-encryption.json`
 
 ## Install
 
@@ -86,4 +95,5 @@ Run the web app directly:
 ```sh
 cd apps/web
 npm run dev
+```
 ```
