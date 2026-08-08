@@ -1,3 +1,7 @@
+# CALM AI Assistant
+.github/agents/
+
+
 .DS_Store
 .venv/
 __pycache__/

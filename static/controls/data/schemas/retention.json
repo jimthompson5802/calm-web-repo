@@ -1,0 +1,25 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.company.com/data/retention.json",
+    "title": "Data Retention Requirement",
+    "description": "Defines the required configuration for data retention, archival, and deletion policies",
+    "type": "object",
+    "properties": {
+        "retention-period": {
+            "type": "string",
+            "pattern": "^[0-9]+-years?$",
+            "description": "Mandatory data retention period, e.g. '7-years'"
+        },
+        "archival-strategy": {
+            "type": "string",
+            "enum": ["cold-storage", "warm-storage", "hot-storage", "tape"],
+            "description": "Storage tier used for archived data"
+        },
+        "deletion-on-expiry": {
+            "type": "boolean",
+            "description": "Whether data is automatically deleted when the retention period expires"
+        }
+    },
+    "required": ["retention-period", "archival-strategy", "deletion-on-expiry"],
+    "additionalProperties": false
+}

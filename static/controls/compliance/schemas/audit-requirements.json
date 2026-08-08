@@ -1,0 +1,45 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.company.com/compliance/audit-requirements.json",
+    "title": "Audit Logging Requirement",
+    "description": "Defines the required configuration for comprehensive audit logging of system events and financial transactions",
+    "type": "object",
+    "properties": {
+        "log-level": {
+            "type": "string",
+            "enum": ["INFO", "WARN", "ERROR", "DEBUG"],
+            "description": "Minimum log level captured in the audit trail"
+        },
+        "retention-days": {
+            "type": "integer",
+            "minimum": 90,
+            "description": "Number of days audit logs must be retained"
+        },
+        "immutable-storage": {
+            "type": "boolean",
+            "description": "Whether audit logs must be written to immutable (write-once) storage"
+        },
+        "events": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "string",
+                "enum": [
+                    "authentication",
+                    "authorisation",
+                    "data-access",
+                    "data-modification",
+                    "configuration-change",
+                    "transaction"
+                ]
+            },
+            "description": "Event categories that must be audited"
+        },
+        "alert-on-anomaly": {
+            "type": "boolean",
+            "description": "Whether anomalous activity triggers real-time alerts"
+        }
+    },
+    "required": ["log-level", "retention-days", "immutable-storage", "events"],
+    "additionalProperties": false
+}

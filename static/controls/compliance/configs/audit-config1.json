@@ -1,0 +1,15 @@
+{
+    "$schema": "https://schemas.company.com/compliance/audit-requirements.json",
+    "log-level": "INFO",
+    "retention-days": 2555,
+    "immutable-storage": true,
+    "events": [
+        "authentication",
+        "authorisation",
+        "data-access",
+        "data-modification",
+        "configuration-change",
+        "transaction"
+    ],
+    "alert-on-anomaly": true
+}

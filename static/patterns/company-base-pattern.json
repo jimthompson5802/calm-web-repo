@@ -1,0 +1,23 @@
+{
+  "$schema": "https://calm.finos.org/release/1.1/meta/calm.json",
+  "$id": "https://example.com/patterns/company-base-pattern.json",
+  "title": "Company Base Pattern",
+  "description": "A base pattern enforcing organisational standards on all CALM architectures. Every node must comply with the Company Node Standard (cost center, owner, environment) and every relationship must comply with the Company Relationship Standard (data classification, encrypted).",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "description": "All nodes must conform to the Company Node Standard.",
+      "items": {
+        "$ref": "https://example.com/standards/company-node-standard.json"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "description": "All relationships must conform to the Company Relationship Standard.",
+      "items": {
+        "$ref": "https://example.com/standards/company-relationship-standard.json"
+      }
+    }
+  }
+}
