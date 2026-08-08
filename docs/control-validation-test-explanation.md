@@ -1,8 +1,10 @@
 # Control Validation Test Explanation
 
-This document explains why `calm validate` succeeds for the first two nodes in [`architectures/control-test-architecture.json`](../static/architectures/control-test-architecture.json) and fails for the third node.
+This document explains why `calm validate` succeeds for the first two nodes in [`architectures/control-test-architecture.json`](../static/architectures/control-test-architecture.json) and fails for the third node, and how the new pattern-based validation also catches the fourth node that omits its controls section.
 
 ## `calm validate` output for validating the architecture
+
+### Validation without the pattern
 
 ```
 $ calm validate -a http://localhost:8080/architectures/control-test-architecture.json 
@@ -14,6 +16,49 @@ info [calmhub-document-loader]:     Configuring CALMHub document loader with bas
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [
+        {
+            "code": "control-requirement-validation",
+            "severity": "error",
+            "message": "must be equal to one of the allowed values",
+            "path": "/nodes/2/controls/session-protection/requirements/0/protection-level",
+            "schemaPath": "#/properties/protection-level/enum",
+            "source": "architecture"
+        },
+        {
+            "code": "control-requirement-validation",
+            "severity": "error",
+            "message": "must be >= 1",
+            "path": "/nodes/2/controls/session-protection/requirements/0/idle-timeout-minutes",
+            "schemaPath": "#/properties/idle-timeout-minutes/minimum",
+            "source": "architecture"
+        }
+    ],
+    "spectralSchemaValidationOutputs": [],
+    "hasErrors": true,
+    "hasWarnings": false
+```
+
+### Validation with the control pattern
+
+```
+$ calm validate -a http://localhost:8080/architectures/control-test-architecture.json -p http
+://localhost:8080/patterns/company-control-pattern.json 
+(node:4933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
+info [calm-cli]:     Using allowed remote hosts from config file
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: http://localhost:8080
+info [calm-validate]:     Formatting output as json
+{
+    "jsonSchemaValidationOutputs": [
+        {
+            "code": "json-schema",
+            "severity": "error",
+            "message": "must have required property 'controls'",
+            "path": "/nodes/3",
+            "schemaPath": "#/allOf/1/required",
+            "source": "architecture"
+        },
         {
             "code": "control-requirement-validation",
             "severity": "error",
@@ -158,10 +203,32 @@ The validation fails for two reasons:
 - `extreme` is not one of the allowed enum values for `protection-level`
 - `0` is below the minimum value required for `idle-timeout-minutes`
 
+## Fourth Node: Failed
+
+The fourth node intentionally omits the `controls` section entirely. Under the control pattern, that is invalid because the pattern requires every node to conform to the Node Control Standard, and that standard requires a `controls` object containing a `session-protection` control.
+
+The node is defined as:
+
+```json
+{
+  "unique-id": "session-no-controls-node",
+  "node-type": "service",
+  "name": "Session No Controls Node",
+  "description": "Service node that intentionally has no controls section"
+}
+```
+
+The validation error reports:
+
+- `must have required property 'controls'`
+
+This demonstrates that the pattern enforces the presence of the control section, not just the internal validity of the control values.
+
 ## Summary
 
 - The first node passes because its inline config is valid.
 - The second node passes because it references an approved config URL with valid values.
 - The third node fails because its inline config does not satisfy the control requirement schema.
+- The fourth node fails because it does not include the required `controls` section at all.
 
-The failure is isolated to the third node’s control settings. The architecture structure itself is valid.
+The failure is isolated to the third and fourth nodes’ control settings and structure.tructure itself is valid.
