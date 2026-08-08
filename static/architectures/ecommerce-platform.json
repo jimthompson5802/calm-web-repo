@@ -27,45 +27,15 @@
             "description": "Data encryption and secure communication requirements",
             "requirements": [
                 {
-                    "requirement-url": "http://localhost:8080/controls/security/encryption-at-rest",
+                    "requirement-url": "http://localhost:8080/controls/data/schemas/encryption-at-rest.json",
                     "config": {
                         "algorithm": "AES-256",
                         "scope": "all-data-stores"
                     }
                 },
                 {
-                    "requirement-url": "http://localhost:8080/controls/security/tls-1-3-minimum",
-                    "config-url": "http://localhost:8080/controls/security/tls-config.yaml"
-                }
-            ]
-        },
-        "performance": {
-            "description": "System-wide performance and scalability requirements",
-            "requirements": [
-                {
-                    "requirement-url": "http://localhost:8080/controls/performance/response-time-sla",
-                    "config": {
-                        "p99-latency-ms": 200,
-                        "p95-latency-ms": 100
-                    }
-                },
-                {
-                    "requirement-url": "http://localhost:8080/controls/performance/availability-target",
-                    "config-url": "http://localhost:8080/controls/infra/ha-config.yaml"
-                }
-            ]
-        },
-        "high-availability": {
-            "description": "All tier-1 services must meet the platform-wide availability target of 99.9% uptime, measured monthly",
-            "requirements": [
-                {
-                    "requirement-url": "http://localhost:8080/controls/resilience/availability-sla",
-                    "config": {
-                        "target-uptime-percent": 99.9,
-                        "measurement-window": "monthly",
-                        "max-downtime-minutes-per-month": 43,
-                        "sla-tiers-in-scope": ["tier-1"]
-                    }
+                    "requirement-url": "http://localhost:8080/controls/security/schemas/tls-encryption.json",
+                    "config-url": "http://localhost:8080/controls/security/configs/tls-encryption-config1.json"
                 }
             ]
         }
@@ -112,7 +82,7 @@
                     "description": "All order processing steps must be logged for audit compliance",
                     "requirements": [
                         {
-                            "requirement-url": "http://localhost:8080/controls/audit/transaction-logging",
+                            "requirement-url": "http://localhost:8080/controls/compliance/schemas/audit-requirements.json",
                             "config": {
                                 "log-level": "detailed",
                                 "retention-days": 365
@@ -239,24 +209,6 @@
                 "dashboard": "https://grafana.example.com/d/api-gateway",
                 "log-query": "https://kibana.example.com/app/discover#/api-gateway-*",
                 "alerts": ["api-gateway-down", "rate-limit-threshold-reached", "auth-failure-spike", "upstream-timeout"]
-            },
-            "controls": {
-                "performance": {
-                    "description": "API Gateway rate limiting and caching requirements",
-                    "requirements": [
-                        {
-                            "requirement-url": "http://localhost:8080/controls/performance/rate-limiting",
-                            "config-url": "http://localhost:8080/controls/gateway/rate-limits.yaml"
-                        },
-                        {
-                            "requirement-url": "http://localhost:8080/controls/performance/caching-policy",
-                            "config": {
-                                "default-ttl-seconds": 300,
-                                "cache-control": "private"
-                            }
-                        }
-                    ]
-                }
             }
         },
         {
@@ -288,24 +240,6 @@
                 "dashboard": "https://grafana.example.com/d/api-gateway",
                 "log-query": "https://kibana.example.com/app/discover#/api-gateway-*",
                 "alerts": ["api-gateway-down", "rate-limit-threshold-reached", "auth-failure-spike", "upstream-timeout"]
-            },
-            "controls": {
-                "performance": {
-                    "description": "API Gateway rate limiting and caching requirements",
-                    "requirements": [
-                        {
-                            "requirement-url": "http://localhost:8080/controls/performance/rate-limiting",
-                            "config-url": "http://localhost:8080/controls/gateway/rate-limits.yaml"
-                        },
-                        {
-                            "requirement-url": "http://localhost:8080/controls/performance/caching-policy",
-                            "config": {
-                                "default-ttl-seconds": 300,
-                                "cache-control": "private"
-                            }
-                        }
-                    ]
-                }
             }
         },
         {
@@ -358,24 +292,6 @@
                 "dashboard": "https://grafana.example.com/d/order-service",
                 "log-query": "https://kibana.example.com/app/discover#/order-service-*",
                 "alerts": ["order-service-down", "db-connection-pool-exhausted", "circuit-breaker-open", "order-processing-error-rate-high"]
-            },
-            "controls": {
-                "circuit-breaker": {
-                    "description": "Circuit breaker thresholds for Order Service outbound calls to protect against cascading failures",
-                    "requirements": [
-                        {
-                            "requirement-url": "http://localhost:8080/controls/resilience/circuit-breaker-policy",
-                            "config": {
-                                "failure-rate-threshold-percent": 50,
-                                "slow-call-rate-threshold-percent": 80,
-                                "slow-call-duration-threshold-ms": 2000,
-                                "sliding-window-size": 10,
-                                "wait-duration-in-open-state-seconds": 30,
-                                "permitted-calls-in-half-open-state": 3
-                            }
-                        }
-                    ]
-                }
             }
         },
         {
@@ -480,17 +396,6 @@
                 "dashboard": "https://grafana.example.com/d/payment-service",
                 "log-query": "https://kibana.example.com/app/discover#/payment-service-*",
                 "alerts": ["payment-service-down", "payment-gateway-error-rate-high", "queue-consumer-stopped", "duplicate-payment-detected"]
-            },
-            "controls": {
-                "compliance": {
-                    "description": "PCI-DSS compliance for payment processing",
-                    "requirements": [
-                        {
-                            "requirement-url": "https://www.pcisecuritystandards.org/documents/PCI-DSS-v4.0",
-                            "config-url": "http://localhost:8080/controls/compliance/pci-dss-config.json"
-                        }
-                    ]
-                }
             }
         },
         {
@@ -557,24 +462,6 @@
                 "engine": "PostgreSQL 15",
                 "high-availability": true,
                 "replication-mode": "async"
-            },
-            "controls": {
-                "failover": {
-                    "description": "Recovery time and recovery point objectives for the order database cluster in the event of a primary node failure",
-                    "requirements": [
-                        {
-                            "requirement-url": "http://localhost:8080/controls/resilience/database-failover-rto-rpo",
-                            "config": {
-                                "rto-seconds": 30,
-                                "rpo-seconds": 5,
-                                "failover-mode": "automatic",
-                                "health-check-interval-seconds": 5,
-                                "failover-trigger-missed-checks": 3,
-                                "replication-lag-alert-threshold-seconds": 10
-                            }
-                        }
-                    ]
-                }
             }
         },
         {
