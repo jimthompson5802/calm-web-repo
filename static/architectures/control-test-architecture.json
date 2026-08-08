@@ -62,6 +62,12 @@
                     ]
                 }
             }
+        },
+        {
+            "unique-id": "session-no-controls-node",
+            "node-type": "service",
+            "name": "Session No Controls Node",
+            "description": "Service node that intentionally has no controls section"
         }
     ],
     "relationships": [
@@ -90,6 +96,21 @@
                     },
                     "destination": {
                         "node": "session-bad-config-node"
+                    }
+                }
+            },
+            "protocol": "HTTPS"
+        },
+        {
+            "unique-id": "session-bad-config-to-no-controls",
+            "description": "Session bad config node connects to the node without controls",
+            "relationship-type": {
+                "connects": {
+                    "source": {
+                        "node": "session-bad-config-node"
+                    },
+                    "destination": {
+                        "node": "session-no-controls-node"
                     }
                 }
             },
