@@ -41,6 +41,27 @@
                     ]
                 }
             }
+        },
+        {
+            "unique-id": "session-bad-config-node",
+            "node-type": "service",
+            "name": "Session Bad Config Node",
+            "description": "Service node that uses the session protection control from the invalid config setting",
+            "controls": {
+                "session-protection": {
+                    "description": "Session protection requirement loaded from the bad shared config file",
+                    "requirements": [
+                        {
+                            "requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+                            "config": {
+                                "protection-level": "extreme",
+                                "idle-timeout-minutes": 0,
+                                "encryption-required": true
+                            }
+                        }
+                    ]
+                }
+            }
         }
     ],
     "relationships": [
@@ -54,6 +75,21 @@
                     },
                     "destination": {
                         "node": "session-config-node"
+                    }
+                }
+            },
+            "protocol": "HTTPS"
+        },
+        {
+            "unique-id": "session-config-to-bad-config",
+            "description": "Session config node connects to the node using the invalid shared session config",
+            "relationship-type": {
+                "connects": {
+                    "source": {
+                        "node": "session-config-node"
+                    },
+                    "destination": {
+                        "node": "session-bad-config-node"
                     }
                 }
             },
