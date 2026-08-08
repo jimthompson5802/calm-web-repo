@@ -5,6 +5,7 @@ Repository for serving public FINOS CALM JSON content with Nginx, plus Python an
 ## Documentation
 - [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
 - [`docs/validate-architecture-script.md`](docs/validate-architecture-script.md) describes the scripted CALM architecture validation checks.
+- [`docs/control-validation-test-explanation.md`](docs/control-validation-test-explanation.md) explains node-level control validation results for `control-test-architecture.json`.
 
 ## Layout
 
