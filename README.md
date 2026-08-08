@@ -3,7 +3,8 @@
 Repository for serving public FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work.
 
 ## Documentation
-- `docs/usage-notes.md` captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
+- [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
+- [`docs/validate-architecture-script.md`](docs/validate-architecture-script.md) describes the scripted CALM architecture validation checks.
 
 ## Layout
 
@@ -39,6 +40,12 @@ Repository for serving public FINOS CALM JSON content with Nginx, plus Python an
 - `make test-api` validates Python API behavior.
 - `make typecheck-web` validates TypeScript types.
 - `./scripts/validate-architecture.sh` runs CALM validation checks for detailed architecture references.
+
+## Control Authoring Note
+
+- In `static/architectures/ecommerce-platform.json`, control `requirement-url` values point to assets served from `http://localhost:8080/controls/...`.
+- Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
+- Keep control configs in `static/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
 
 ## Static Content
 
