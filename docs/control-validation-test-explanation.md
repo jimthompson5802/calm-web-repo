@@ -1,10 +1,71 @@
 # Control Validation Test Explanation
 
-This document explains why `calm validate` succeeds for the first two nodes in `static/architectures/control-test-architecture.json` and fails for the third node.
+This document explains why `calm validate` succeeds for the first two nodes in [`architectures/control-test-architecture.json`](../static/architectures/control-test-architecture.json) and fails for the third node.
+
+## `calm validate` output for validating the architecture
+
+```
+$ calm validate -a http://localhost:8080/architectures/control-test-architecture.json 
+(node:65626) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Using CALMHub URL from config file: http://localhost:8080
+info [calm-cli]:     Using allowed remote hosts from config file
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: http://localhost:8080
+info [calm-validate]:     Formatting output as json
+{
+    "jsonSchemaValidationOutputs": [
+        {
+            "code": "control-requirement-validation",
+            "severity": "error",
+            "message": "must be equal to one of the allowed values",
+            "path": "/nodes/2/controls/session-protection/requirements/0/protection-level",
+            "schemaPath": "#/properties/protection-level/enum",
+            "source": "architecture"
+        },
+        {
+            "code": "control-requirement-validation",
+            "severity": "error",
+            "message": "must be >= 1",
+            "path": "/nodes/2/controls/session-protection/requirements/0/idle-timeout-minutes",
+            "schemaPath": "#/properties/idle-timeout-minutes/minimum",
+            "source": "architecture"
+        }
+    ],
+    "spectralSchemaValidationOutputs": [],
+    "hasErrors": true,
+    "hasWarnings": false
+```
 
 ## Control Requirement
 
-The session control requirement in `static/controls/session/schemas/session-protection.json` defines three rules:
+The session control requirement in [`controls/session/schemas/session-protection.json`](../static/controls/session/schemas/session-protection.json) defines three rules:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Session Protection Requirement",
+	"description": "Defines minimum protection requirements for interactive user sessions.",
+	"type": "object",
+	"properties": {
+		"protection-level": {
+			"type": "string",
+			"enum": ["low", "medium", "high"]
+		},
+		"idle-timeout-minutes": {
+			"type": "integer",
+			"minimum": 1
+		},
+		"encryption-required": {
+			"type": "boolean"
+		}
+	},
+	"required": [
+		"protection-level",
+		"idle-timeout-minutes",
+		"encryption-required"
+	]
+}
+```
 
 - `protection-level` must be one of `low`, `medium`, or `high`
 - `idle-timeout-minutes` must be at least `1`
@@ -13,6 +74,24 @@ The session control requirement in `static/controls/session/schemas/session-prot
 ## First Node: Passed
 
 The first node uses an inline control config:
+
+```json
+{
+	"session-protection": {
+		"description": "Session protection requirement defined with inline configuration",
+		"requirements": [
+			{
+				"requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+				"config": {
+					"protection-level": "medium",
+					"idle-timeout-minutes": 20,
+					"encryption-required": true
+				}
+			}
+		]
+	}
+}
+```
 
 - `protection-level: "medium"`
 - `idle-timeout-minutes: 20`
@@ -24,7 +103,21 @@ These values satisfy the schema, so validation passes.
 
 The second node references an approved control config URL:
 
-- `config-url: http://localhost:8080/controls/session/configs/session-config.json`
+```json
+{
+	"session-protection": {
+		"description": "Session protection requirement loaded from the shared config file",
+		"requirements": [
+			{
+				"requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+				"config-url": "http://localhost:8080/controls/session/configs/session-config.json"
+			}
+		]
+	}
+}
+```
+
+- [`config-url: http://localhost:8080/controls/session/configs/session-config.json`](../static/controls/session/configs/session-config.json)
 
 That config file contains valid values:
 
@@ -37,6 +130,24 @@ Because the referenced config matches the schema, validation passes.
 ## Third Node: Failed
 
 The third node uses an inline control config that violates the schema:
+
+```json
+{
+	"session-protection": {
+		"description": "Session protection requirement loaded from the bad shared config file",
+		"requirements": [
+			{
+				"requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+				"config": {
+					"protection-level": "extreme",
+					"idle-timeout-minutes": 0,
+					"encryption-required": true
+				}
+			}
+		]
+	}
+}
+```
 
 - `protection-level: "extreme"`
 - `idle-timeout-minutes: 0`
