@@ -38,7 +38,7 @@ Repository for serving public FINOS CALM JSON content with Nginx, plus Python an
 - `docker-compose config` validates Compose configuration.
 - `make test-api` validates Python API behavior.
 - `make typecheck-web` validates TypeScript types.
-- `./scripts/validate-detailed-architecture.sh` runs CALM validation checks for detailed architecture references.
+- `./scripts/validate-architecture.sh` runs CALM validation checks for detailed architecture references.
 
 ## Static Content
 
