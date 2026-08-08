@@ -1,0 +1,21 @@
+{
+  "$schema": "https://calm.finos.org/release/1.1/meta/calm.json",
+  "$id": "https://example.com/patterns/company-control-pattern.json",
+  "title": "Company Control Pattern",
+  "description": "A pattern enforcing the company control standard on all CALM architectures. Every node must comply with the Node Control Standard and include a session-protection control.",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "description": "All nodes must conform to the Node Control Standard.",
+      "items": {
+        "$ref": "http://localhost:8080/standards/node-control-standard.json"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "description": "Relationships are not constrained by a specific standard in this pattern.",
+      "items": {}
+    }
+  }
+}
