@@ -11,6 +11,24 @@ completely unchanged.** The new IDP abstraction applies exclusively to the `Dire
 and is configured through a separate `directUrlAuth` block in `~/.calm.json`. Both loaders can
 therefore operate under different credentials simultaneously.
 
+### Supported Industry Standards
+
+The design is intentionally IDP-agnostic. Any Identity Provider that implements one of the
+following industry-standard protocols is supported without modification to this repository:
+
+| Standard | RFC / Spec | Built-in type | Example IDPs |
+|---|---|---|---|
+| OAuth 2.0 Client Credentials | RFC 6749 §4.4 | `client-credentials` | PingFederate, PingOne, Keycloak, Okta, Azure AD, ForgeRock AM, Auth0 |
+| OAuth 2.0 Authorization Code + PKCE | RFC 7636 + RFC 6749 §4.1 | `pkce` | PingFederate, PingOne, Keycloak, Okta, Azure AD, ForgeRock AM, Auth0 |
+| Bearer Token (static) | RFC 6750 | `static-token` | Any IDP that issues long-lived tokens or PATs (GitHub, GitLab, Bitbucket) |
+| API Key | — (de facto standard) | `api-key` | AWS API Gateway, Kong, Apigee, custom gateways |
+| Proprietary / non-standard flows | org-defined | `custom` (external package) | Any IDP with a vendor SDK — PingFederate SAML adapters, Symantec SiteMinder, CA SSO, bespoke corporate SSO |
+
+For IDPs that implement OAuth 2.0 Client Credentials or PKCE, the built-in `ClientCredentialsIdpClient`
+or `PkceIdpClient` can be used directly via configuration — **no custom code is required**. The
+`custom` type exists for IDPs with proprietary SDKs, non-standard grant types, or additional
+org-specific logic (e.g., certificate pinning, custom claim validation, SAML-based flows).
+
 ---
 
 ## Current State
@@ -95,6 +113,11 @@ graph LR
 `AuthPlugin` stays in `@finos/calm-shared` so all existing consumers are unaffected. `@finos/calm-auth`
 depends on `@finos/calm-shared` for that interface. External org packages depend only on
 `@finos/calm-auth` for the `IdpClient` contract.
+
+> **IDP vendor note:** Keycloak is used as the illustrative example throughout this document.
+> Any IDP listed in the Supported Industry Standards table above (PingFederate, PingOne, Okta,
+> Azure AD, ForgeRock, Auth0, etc.) is equally supported. The `@acme/calm-keycloak-idp` package
+> name in diagrams is a placeholder — substitute the org's actual IDP vendor name.
 
 ---
 
