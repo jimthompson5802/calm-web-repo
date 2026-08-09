@@ -1,6 +1,6 @@
 # Generalised IDP Auth Plugin Design
 
-Design created by GHCP using Claude Haiku 4.5 and Claude Sonnet 4.6
+Github Copilot using Claude Haiku 4.5 and Claude Sonnet 4.6 assisted in developing the design described in this document.
 
 ## Overview
 
