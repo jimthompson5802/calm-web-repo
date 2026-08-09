@@ -28,7 +28,7 @@
     {
       "unique-id": "repository-static-content",
       "node-type": "data-asset",
-      "name": "Repository Static Content",
+      "name": "CALM Artifacts (Static)",
       "description": "The static content bundle exposed by the nginx server, including architecture JSON, patterns, standards, and documentation assets.",
       "environment": "local-development"
     },
