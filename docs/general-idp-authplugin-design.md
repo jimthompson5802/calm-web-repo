@@ -298,12 +298,50 @@ are fully independent.
 
 ### External Organisation IDP Support
 
-An organisation with a proprietary IDP (e.g., a bespoke Keycloak realm, a corporate SSO) can:
+An organisation with a proprietary IDP (e.g., a bespoke Keycloak realm, a corporate SSO) can
+implement and distribute their own IDP package **entirely outside the `architecture-as-code`
+repository**. The org package lives in its own separate git repository, is built and published
+independently, and has no structural or source-level dependency on the `architecture-as-code`
+repo. The only coupling is to the published `@finos/calm-auth` npm package, which supplies the
+`IdpClient` interface.
 
-1. Create their own npm package (e.g., `@acme/calm-keycloak-idp`) in their own repository.
-2. Depend on `@finos/calm-auth` for the `IdpClient` interface.
+```mermaid
+graph TB
+    subgraph FINOS["FINOS (public)"]
+        subgraph AAC["git repo: finos/architecture-as-code"]
+            SHARED["@finos/calm-shared\n(publishes AuthPlugin interface)"]
+            AUTH["@finos/calm-auth\n(publishes IdpClient interface)"]
+            CLI["@finos/calm-cli"]
+        end
+        NPM_PUB["npm registry (public)\nnpmjs.com"]
+        SHARED -- "npm publish" --> NPM_PUB
+        AUTH -- "npm publish" --> NPM_PUB
+    end
+
+    subgraph ORG["Organisation (private)"]
+        subgraph ORG_REPO["git repo: acme/calm-keycloak-idp\n(separate repo, no fork of architecture-as-code)"]
+            ORG_SRC["src/acme-keycloak-idp-client.ts\nimplements IdpClient"]
+        end
+        ORG_REG["npm registry (private)\ne.g. Artifactory / GitHub Packages"]
+        ORG_REPO -- "npm publish" --> ORG_REG
+    end
+
+    NPM_PUB -- "npm install @finos/calm-auth" --> ORG_SRC
+    ORG_REG -- "npm install @acme/calm-keycloak-idp" --> CLI
+
+    style AAC fill:#e8f4e8,stroke:#2d7a2d
+    style ORG_REPO fill:#e8f0fb,stroke:#3a6bc4
+    style FINOS fill:#f0faf0,stroke:#2d7a2d
+    style ORG fill:#f0f4ff,stroke:#3a6bc4
+```
+
+Steps for the org:
+
+1. Create a new git repository (e.g., `acme/calm-keycloak-idp`) separate from `architecture-as-code`.
+2. Add `@finos/calm-auth` as a dependency — this is a published npm package, so no access to
+   the `architecture-as-code` source repo is needed.
 3. Implement and `export default` a class that satisfies `IdpClient`.
-4. Publish to their private npm registry.
+4. Publish the package (e.g., `@acme/calm-keycloak-idp`) to the org's private npm registry.
 
 End-users configure their `~/.calm.json`:
 
