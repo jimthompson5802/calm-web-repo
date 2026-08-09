@@ -1,6 +1,9 @@
-# calm-web-repo
+# CALM Artifact Access Testbed
 
 Repository for serving public FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work.
+
+## Testbed CALM Architecture
+![](docs/images/index-1.png)
 
 ## Documentation
 - [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
@@ -13,8 +16,8 @@ Repository for serving public FINOS CALM JSON content with Nginx, plus Python an
 - `static/patterns/` holds CALM pattern JSON files.
 - `static/standards/` holds CALM standard JSON files.
 - `static/controls/` holds CALM control requirement schemas and control configuration JSON files.
-- `apps/api/` holds the Python service scaffold.
-- `apps/web/` holds the TypeScript web scaffold.
+- `apps/api/` holds the Python service scaffold (FUTURE WORK).
+- `apps/web/` holds the TypeScript web scaffold (FUTURE WORK).
 - `infra/nginx/` holds the Nginx config.
 
 `/api` is reserved for future reverse proxying. Do not use that path for static assets.
@@ -61,21 +64,23 @@ Sample public URLs after `make start-web-server`:
 
 ## Install
 
-Python:
+Python (FUTURE WORK):
 
 ```sh
 cd apps/api
 uv sync
 ```
 
-TypeScript:
+TypeScript (FUTURE WORK):
 
 ```sh
 cd apps/web
 npm install
 ```
 
-## Start
+## Web Server
+
+### Start
 
 Run the static server:
 
@@ -83,7 +88,7 @@ Run the static server:
 make start-web-server
 ```
 
-## Stop
+### Stop
 
 Stop the static server and remove the Compose resources:
 
@@ -91,17 +96,17 @@ Stop the static server and remove the Compose resources:
 make stop-web-server
 ```
 
-Run the API directly:
+## API Access
+Run the API directly (FUTURE WORK):
 
 ```sh
 cd apps/api
 uv run uvicorn calm_api.main:app --reload
 ```
 
-Run the web app directly:
+Run the web app directly (FUTURE WORK):
 
 ```sh
 cd apps/web
 npm run dev
-```
 ```

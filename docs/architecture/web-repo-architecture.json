@@ -1,0 +1,152 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "web-repo-architecture",
+  "name": "Web Repository Architecture",
+  "description": "Architecture for the CALM web repository, covering the static web server that hosts repository assets and the validation workflow used to verify CALM models over HTTP.",
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A human architect or operator who requests the web site and documentation assets from the local static server and runs validation workflows.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "nginx-static-server",
+      "node-type": "service",
+      "name": "Nginx Static Web Server",
+      "description": "The nginx container defined in compose.yaml that serves static repository content and CALM architecture assets over HTTP on port 8080.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "nginx-http",
+          "host": "localhost",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "repository-static-content",
+      "node-type": "data-asset",
+      "name": "Repository Static Content",
+      "description": "The static content bundle exposed by the nginx server, including architecture JSON, patterns, standards, and documentation assets.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "architecture-validation-script",
+      "node-type": "service",
+      "name": "Architecture Validation Script",
+      "description": "The shell script in scripts/validate-architecture.sh that runs CALM validation commands against the assets exposed by the static server.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "calm-cli",
+      "node-type": "service",
+      "name": "CALM CLI",
+      "description": "The CALM CLI used by the validation script to validate architecture, pattern, standard, and control assets.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "docker-container",
+      "node-type": "container",
+      "name": "Docker Container",
+      "description": "A container grouping that hosts the nginx web server and the static content assets for the repository.",
+      "environment": "local-development"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "user-to-nginx",
+      "description": "Architects request the repository's static web site and assets from the nginx server over HTTP.",
+      "dataClassification": "public",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "repository-user"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "user-to-validation-script",
+      "description": "Run validation tests as an architect", 
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": [
+            "architecture-validation-script"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-content",
+      "description": "The nginx server serves static repository assets from the repository content bundle.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "repository-static-content"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "validation-script-to-calm-cli",
+      "description": "The validation script invokes the CALM CLI to run validation commands against the exposed assets.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "architecture-validation-script"
+          },
+          "destination": {
+            "node": "calm-cli"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-nginx",
+      "description": "The CALM CLI validates architecture documents by loading them from the local nginx server over HTTP.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "container-composed-of",
+      "description": "The Docker container groups the nginx web server and the repository static content assets.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "composed-of": {
+          "container": "docker-container",
+          "nodes": [
+            "nginx-static-server",
+            "repository-static-content"
+          ]
+        }
+      }
+    }
+  ]
+}
