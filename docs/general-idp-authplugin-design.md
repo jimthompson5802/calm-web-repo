@@ -1,5 +1,7 @@
 # Generalised IDP Auth Plugin Design
 
+Design created by GHCP using Claude Haiku 4.5 and Claude Sonnet 4.6
+
 ## Overview
 
 This document describes a design to add authentication support to the `DirectUrlDocumentLoader`
