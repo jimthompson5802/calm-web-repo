@@ -3,6 +3,7 @@
 Repository for serving public FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work.
 
 ## Testbed CALM Architecture
+[CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
 ![](docs/images/index-1.png)
 
 ## Documentation
