@@ -70,9 +70,9 @@ The primary browser-facing endpoint is authenticated HTTPS:
 - `https://localhost:8443/`
 - `https://localhost:8443/architectures/calm-1.json`
 
-Local Keycloak admin access is published on:
+The Keycloak admin console uses the same HTTPS origin:
 
-- `http://localhost:8081/admin/`
+- `https://localhost:8443/keycloak/admin/master/console/`
 
 ## Install
 
@@ -111,6 +111,7 @@ make start-web-server
 - create a local self-signed certificate under `infra/nginx/certs/` if one is missing
 - render a local Keycloak realm import into `infra/keycloak/import/`
 - start `keycloak`, `oauth2-proxy`, and `nginx`
+- serve the Keycloak admin console through the HTTPS Keycloak path
 
 If you need a cookie secret, generate one with:
 

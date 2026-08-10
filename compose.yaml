@@ -50,10 +50,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME: https://localhost:8443/keycloak
-      KC_HOSTNAME_ADMIN: http://localhost:8081
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
-    ports:
-      - "127.0.0.1:8081:8080"
     volumes:
       - ./infra/keycloak/import:/opt/keycloak/data/import:ro
     restart: unless-stopped
