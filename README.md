@@ -1,6 +1,6 @@
 # CALM Artifact Access Testbed
 
-Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development now supports both anonymous HTTP access for CLI validation workflows and authenticated HTTPS access backed by Keycloak.
+Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development serves repository content only over authenticated HTTPS backed by Keycloak, with an anonymous HTTPS health check for operational use.
 
 ## Testbed CALM Architecture
 [CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
@@ -46,29 +46,29 @@ Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeS
 - `docker-compose config` validates Compose configuration.
 - `make test-api` validates Python API behavior.
 - `make typecheck-web` validates TypeScript types.
-- `./scripts/validate-architecture.sh` runs CALM validation checks for detailed architecture references.
+- `./scripts/validate-architecture.sh` is intentionally unchanged in this repo revision and still needs a follow-up update before it matches the authenticated HTTPS-only stack.
 
 ## Control Authoring Note
 
-- In `static/architectures/ecommerce-platform.json`, control `requirement-url` values point to assets served from `http://localhost:8080/controls/...`.
+- In `static/architectures/ecommerce-platform.json`, control `requirement-url` values point to assets served from `https://localhost:8443/controls/...`.
 - Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
 - Keep control configs in `static/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
 
 ## Static Content
 
-Static content remains anonymously available on the HTTP endpoint for CALM CLI validation and backward-compatible local workflows.
+Static content is available only through the authenticated HTTPS endpoint. The only anonymous endpoint exposed by the web server is `/healthz`.
 
-Sample anonymous URLs after `make start-web-server`:
-
-- `http://localhost:8080/architectures/calm-1.json`
-- `http://localhost:8080/patterns/company-base-pattern.json`
-- `http://localhost:8080/standards/company-node-standard.json`
-- `http://localhost:8080/controls/security/schemas/tls-encryption.json`
-
-The primary browser-facing endpoint is authenticated HTTPS:
+Sample authenticated URLs after `make start-web-server`:
 
 - `https://localhost:8443/`
 - `https://localhost:8443/architectures/calm-1.json`
+- `https://localhost:8443/patterns/company-base-pattern.json`
+- `https://localhost:8443/standards/company-node-standard.json`
+- `https://localhost:8443/controls/security/schemas/tls-encryption.json`
+
+Anonymous health check:
+
+- `https://localhost:8443/healthz`
 
 The Keycloak admin console uses the same HTTPS origin:
 
@@ -111,6 +111,7 @@ make start-web-server
 - create a local self-signed certificate under `infra/nginx/certs/` if one is missing
 - render a local Keycloak realm import into `infra/keycloak/import/`
 - start `keycloak`, `oauth2-proxy`, and `nginx`
+- serve repository content only through authenticated HTTPS
 - serve the Keycloak admin console through the HTTPS Keycloak path
 
 If you need a cookie secret, generate one with:

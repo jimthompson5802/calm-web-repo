@@ -2,27 +2,22 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "web-repo-architecture",
   "name": "Web Repository Architecture",
-  "description": "Architecture for the CALM web repository, covering the static web server that hosts repository assets and the validation workflow used to verify CALM models over HTTP.",
+  "description": "Architecture for the CALM web repository, covering the static web server that hosts repository assets behind authenticated HTTPS access and the retained validation workflow documentation that still awaits a follow-up auth-aware update.",
   "nodes": [
     {
       "unique-id": "repository-user",
       "node-type": "actor",
       "name": "Architect",
-      "description": "A human architect or operator who requests the web site and documentation assets from the local static server and runs validation workflows.",
+      "description": "A human architect or operator who requests the web site and documentation assets from the local static server over authenticated HTTPS and reviews the retained validation workflow.",
       "environment": "local-development"
     },
     {
       "unique-id": "nginx-static-server",
       "node-type": "service",
       "name": "Nginx Static Web Server",
-      "description": "The nginx container defined in compose.yaml that serves static repository content and CALM architecture assets over HTTP on port 8080, and exposes the HTTPS reverse proxy used for the local Keycloak/OIDC flow on port 8443.",
+      "description": "The nginx container defined in compose.yaml that serves static repository content and CALM architecture assets only over HTTPS on port 8443, and exposes the reverse proxy used for the local Keycloak/OIDC flow.",
       "environment": "local-development",
       "interfaces": [
-        {
-          "unique-id": "nginx-http",
-          "host": "localhost",
-          "port": 8080
-        },
         {
           "unique-id": "nginx-https",
           "host": "localhost",
@@ -39,7 +34,7 @@
       "interfaces": [
         {
           "unique-id": "oauth2-proxy-http",
-          "host": "localhost",
+          "host": "oauth2-proxy",
           "port": 4180
         }
       ]
@@ -53,7 +48,7 @@
       "interfaces": [
         {
           "unique-id": "keycloak-http",
-          "host": "localhost",
+          "host": "keycloak",
           "port": 8080
         }
       ]
@@ -76,14 +71,14 @@
       "unique-id": "architecture-validation-script",
       "node-type": "service",
       "name": "Architecture Validation Script",
-      "description": "The shell script in scripts/validate-architecture.sh that runs CALM validation commands against the assets exposed by the static server.",
+      "description": "The retained shell script in scripts/validate-architecture.sh that still contains legacy remote validation commands and awaits a follow-up auth-aware update.",
       "environment": "local-development"
     },
     {
       "unique-id": "calm-cli",
       "node-type": "service",
       "name": "CALM CLI",
-      "description": "The CALM CLI used by the validation script to validate architecture, pattern, standard, and control assets.",
+      "description": "The CALM CLI used by the retained validation script and related local validation workflows.",
       "environment": "local-development"
     },
     {
@@ -97,9 +92,9 @@
   "relationships": [
     {
       "unique-id": "user-to-nginx",
-      "description": "Architects request the repository's static web site and assets from the nginx server over HTTP and HTTPS.",
+      "description": "Architects request the repository's static web site and assets from the nginx server over authenticated HTTPS.",
       "dataClassification": "public",
-      "encrypted": false,
+      "encrypted": true,
       "relationship-type": {
         "connects": {
           "source": {
@@ -223,9 +218,9 @@
     },
     {
       "unique-id": "calm-cli-to-nginx",
-      "description": "The CALM CLI validates architecture documents by loading them from the local nginx server over HTTP.",
+      "description": "Follow-up work is required for the CALM CLI to validate architecture documents by loading them from the local nginx server over authenticated HTTPS.",
       "dataClassification": "internal",
-      "encrypted": false,
+      "encrypted": true,
       "relationship-type": {
         "connects": {
           "source": {

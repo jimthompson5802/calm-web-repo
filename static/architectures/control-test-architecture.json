@@ -14,7 +14,7 @@
                     "description": "Session protection requirement defined with inline configuration",
                     "requirements": [
                         {
-                            "requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
                             "config": {
                                 "protection-level": "medium",
                                 "idle-timeout-minutes": 20,
@@ -35,8 +35,8 @@
                     "description": "Session protection requirement loaded from the shared config file",
                     "requirements": [
                         {
-                            "requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
-                            "config-url": "http://localhost:8080/controls/session/configs/session-config.json"
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
+                            "config-url": "https://localhost:8443/controls/session/configs/session-config.json"
                         }
                     ]
                 }
@@ -52,7 +52,7 @@
                     "description": "Session protection requirement loaded from the bad shared config file",
                     "requirements": [
                         {
-                            "requirement-url": "http://localhost:8080/controls/session/schemas/session-protection.json",
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
                             "config": {
                                 "protection-level": "extreme",
                                 "idle-timeout-minutes": 0,

@@ -9,7 +9,7 @@
       "type": "array",
       "description": "All nodes must conform to the Node Control Standard.",
       "items": {
-        "$ref": "http://localhost:8080/standards/node-control-standard.json"
+        "$ref": "https://localhost:8443/standards/node-control-standard.json"
       }
     },
     "relationships": {

@@ -27,7 +27,7 @@
             "description": "Data encryption and secure communication requirements",
             "requirements": [
                 {
-                    "requirement-url": "http://localhost:8080/controls/data/schemas/encryption-at-rest.json",
+                    "requirement-url": "https://localhost:8443/controls/data/schemas/encryption-at-rest.json",
                     "config": {
                         "algorithm": "AES-256-GCM",
                         "key-management": "HSM-backed",
@@ -35,7 +35,7 @@
                     }
                 },
                 {
-                    "requirement-url": "http://localhost:8080/controls/security/schemas/tls-encryption.json",
+                    "requirement-url": "https://localhost:8443/controls/security/schemas/tls-encryption.json",
                     "config": {
                         "protocol": "TLS",
                         "version": "1.3",
@@ -92,7 +92,7 @@
                     "description": "All order processing steps must be logged for audit compliance",
                     "requirements": [
                         {
-                            "requirement-url": "http://localhost:8080/controls/compliance/schemas/audit-requirements.json",
+                            "requirement-url": "https://localhost:8443/controls/compliance/schemas/audit-requirements.json",
                             "config": {
                                 "log-level": "INFO",
                                 "retention-days": 365,

@@ -5,7 +5,6 @@ services:
       - oauth2-proxy
       - keycloak
     ports:
-      - "8080:80"
       - "8443:443"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro

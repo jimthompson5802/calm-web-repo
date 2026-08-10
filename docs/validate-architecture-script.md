@@ -1,10 +1,10 @@
 # validate-architecture.sh
 
-`scripts/validate-architecture.sh` runs a fixed set of CALM CLI validation commands against the JSON documents served by the local static web server.
+`scripts/validate-architecture.sh` is retained as a legacy validation helper and still contains the pre-auth remote URL commands. This document describes what the script checks and records that a follow-up change is required before it will match the current authenticated HTTPS-only stack.
 
 ## Purpose
 
-Use this script to quickly verify that the sample architecture assets in this repository behave as expected when loaded over anonymous HTTP from `http://localhost:8080`.
+Use this document to understand the intended validation coverage of the retained script. The script itself is intentionally unchanged in this repo revision and still targets legacy unauthenticated URLs.
 
 The script covers these scenarios:
 
@@ -17,7 +17,7 @@ The script covers these scenarios:
 
 ## Prerequisites
 
-- The local web stack must be running and serving the anonymous compatibility endpoint on `http://localhost:8080`.
+- The local web stack now serves repository content over authenticated `https://localhost:8443`.
 - The `calm` CLI must be installed and available on `PATH`.
 - The repository's static assets must be available under the expected paths such as `/architectures` and `/patterns`.
 
@@ -27,17 +27,17 @@ Start the local static server with:
 make start-web-server
 ```
 
-The script intentionally uses the anonymous HTTP endpoint rather than the authenticated HTTPS endpoint so that CALM CLI validation does not need to log in through Keycloak.
+The script still uses legacy unauthenticated URLs and is pending a separate auth-aware update. Do not treat it as the supported validation path for the current HTTPS-only stack.
 
 ## Run
 
-From the repository root:
+The current script command remains:
 
 ```sh
 ./scripts/validate-architecture.sh
 ```
 
-The script uses `set -x`, so each `calm validate` command is echoed before it runs.
+The script uses `set -x`, so each `calm validate` command is echoed before it runs. Those commands still reference the removed anonymous HTTP endpoint until a later follow-up change updates the workflow.
 
 ## Checks Performed
 
@@ -61,6 +61,6 @@ Expected result: no errors.
 
 ## Notes
 
-- This script validates documents over HTTP, not by local file path.
+- This script still validates documents over legacy remote URLs, not by local file path.
 - The behavior around referenced detailed architectures is documented intentionally because it captures a current validation gap.
 - Related command output examples and CLI notes are recorded in `docs/usage-notes.md`.
