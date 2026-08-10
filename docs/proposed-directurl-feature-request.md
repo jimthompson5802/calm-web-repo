@@ -30,7 +30,7 @@ If direct URL authentication is not configured, `DirectUrlDocumentLoader` must c
 
 ### User Stories:
 
-As a CALM user, I want to access architecture documents stored in an authenticated repository that existed before CALM Hub so that CALM can consume existing organizational content without requiring it to be migrated into CALM Hub.
+As a CALM user, I want to access architecture documents stored in an authenticated repository that existed before CALM Hub so that CALM, for purposes of validation, can consume existing organizational content without requiring it to be migrated into CALM Hub.
 
 As an enterprise user, I want CALM to authenticate to my organization's existing document repository using standard authentication protocols so that CALM can integrate with established repositories and security infrastructure.
 
