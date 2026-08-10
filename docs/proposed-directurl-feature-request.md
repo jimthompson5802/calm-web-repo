@@ -1,5 +1,3 @@
-Below is the complete feature request with the revised user stories incorporated.
-
 # Feature Proposal: Authentication Support for Direct URL Document Loading
 
 ### Target Project:
