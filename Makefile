@@ -1,6 +1,8 @@
 # start up the nginx server to serve CALM content
 start-web-server:
-	docker-compose up -d nginx
+	./scripts/generate-local-certs.sh
+	./scripts/render-keycloak-realm.py
+	docker-compose up -d keycloak oauth2-proxy nginx
 
 
 # stop the nginx server and remove compose resources

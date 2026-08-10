@@ -1,9 +1,59 @@
 services:
   nginx:
     image: nginx:1.29-alpine
+    depends_on:
+      - oauth2-proxy
+      - keycloak
     ports:
       - "8080:80"
+      - "8443:443"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
       - ./static:/usr/share/nginx/html:ro
+    restart: unless-stopped
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3
+    depends_on:
+      - keycloak
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_UPSTREAMS: static://202
+      OAUTH2_PROXY_REDIRECT_URL: https://localhost:8443/oauth2/callback
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SAMESITE: lax
+      OAUTH2_PROXY_COOKIE_CSRF_EXPIRE: 5m
+      OAUTH2_PROXY_CLIENT_ID: calm-web
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://localhost:8443/keycloak/realms/calm-local
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_LOGIN_URL: https://localhost:8443/keycloak/realms/calm-local/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/certs
+      OAUTH2_PROXY_PROFILE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
+      OAUTH2_PROXY_VALIDATE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
+    restart: unless-stopped
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME: https://localhost:8443/keycloak
+      KC_HOSTNAME_ADMIN: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./infra/keycloak/import:/opt/keycloak/data/import:ro
     restart: unless-stopped

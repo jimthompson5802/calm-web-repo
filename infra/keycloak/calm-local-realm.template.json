@@ -1,0 +1,50 @@
+{
+  "realm": "calm-local",
+  "enabled": true,
+  "displayName": "CALM Local Realm",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "clients": [
+    {
+      "clientId": "calm-web",
+      "name": "CALM Web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "__OAUTH2_PROXY_CLIENT_SECRET__",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://localhost:8443/oauth2/callback"
+      ],
+      "webOrigins": [
+        "https://localhost:8443"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "https://localhost:8443/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "__KEYCLOAK_TEST_USER_USERNAME__",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "User",
+      "email": "__KEYCLOAK_TEST_USER_EMAIL__",
+      "credentials": [
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "__KEYCLOAK_TEST_USER_PASSWORD__"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Use this script to quickly verify that the sample architecture assets in this repository behave as expected when loaded over HTTP from `http://localhost:8080`.
+Use this script to quickly verify that the sample architecture assets in this repository behave as expected when loaded over anonymous HTTP from `http://localhost:8080`.
 
 The script covers these scenarios:
 
@@ -17,7 +17,7 @@ The script covers these scenarios:
 
 ## Prerequisites
 
-- The static web server must be running on `http://localhost:8080`.
+- The local web stack must be running and serving the anonymous compatibility endpoint on `http://localhost:8080`.
 - The `calm` CLI must be installed and available on `PATH`.
 - The repository's static assets must be available under the expected paths such as `/architectures` and `/patterns`.
 
@@ -26,6 +26,8 @@ Start the local static server with:
 ```sh
 make start-web-server
 ```
+
+The script intentionally uses the anonymous HTTP endpoint rather than the authenticated HTTPS endpoint so that CALM CLI validation does not need to log in through Keycloak.
 
 ## Run
 

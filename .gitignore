@@ -4,6 +4,9 @@
 
 .DS_Store
 .venv/
+.env
+.env.*
+!.env.example
 __pycache__/
 .pytest_cache/
 .ruff_cache/
@@ -13,3 +16,5 @@ dist/
 coverage/
 *.pyc
 docs/website/
+infra/nginx/certs/
+infra/keycloak/import/
