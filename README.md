@@ -108,8 +108,8 @@ make start-web-server
 
 `make start-web-server` will:
 
-- create a local self-signed certificate under `infra/nginx/certs/` if one is missing
-- render a local Keycloak realm import into `infra/keycloak/import/`
+- run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing
+- run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through authenticated HTTPS
 - serve the Keycloak admin console through the HTTPS Keycloak path
