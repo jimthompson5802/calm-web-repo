@@ -28,6 +28,8 @@ Authentication for direct URLs must remain independent from the existing CALM Hu
 
 If direct URL authentication is not configured, `DirectUrlDocumentLoader` must continue to operate without authentication as it does today.
 
+**IMPORTANT:** The scope of this feature proposal is limited to CALM artifact sharing and supporting CALM validation when the artifacts are stored on a repository supported by `DirectUrlDocumentLoader`.  This proposal does not intend to implement `CALMHub` functionality such as visualization, versioning, artifact diff, timeline, etc.
+
 ### User Stories:
 
 As a CALM user, I want to access architecture documents stored in an authenticated repository that existed before CALM Hub so that CALM, for purposes of validation, can consume existing organizational content without requiring it to be migrated into CALM Hub.
