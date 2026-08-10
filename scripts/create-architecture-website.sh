@@ -1,0 +1,1 @@
+calm docify -a docs/architecture/web-repo-architecture.json -o docs/website --export-diagrams png --clear-output-directory

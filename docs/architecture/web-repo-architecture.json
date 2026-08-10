@@ -15,15 +15,55 @@
       "unique-id": "nginx-static-server",
       "node-type": "service",
       "name": "Nginx Static Web Server",
-      "description": "The nginx container defined in compose.yaml that serves static repository content and CALM architecture assets over HTTP on port 8080.",
+      "description": "The nginx container defined in compose.yaml that serves static repository content and CALM architecture assets over HTTP on port 8080, and exposes the HTTPS reverse proxy used for the local Keycloak/OIDC flow on port 8443.",
       "environment": "local-development",
       "interfaces": [
         {
           "unique-id": "nginx-http",
           "host": "localhost",
           "port": 8080
+        },
+        {
+          "unique-id": "nginx-https",
+          "host": "localhost",
+          "port": 8443
         }
       ]
+    },
+    {
+      "unique-id": "oauth2-proxy-service",
+      "node-type": "service",
+      "name": "OAuth2 Proxy",
+      "description": "The oauth2-proxy container that enforces OIDC sign-in for the static site and forwards authenticated requests to the nginx front end.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "oauth2-proxy-http",
+          "host": "localhost",
+          "port": 4180
+        }
+      ]
+    },
+    {
+      "unique-id": "keycloak-service",
+      "node-type": "service",
+      "name": "Keycloak Identity Provider",
+      "description": "The Keycloak container that runs the calm-local realm, exposes OIDC endpoints, and serves the local authentication flow used by oauth2-proxy.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "keycloak-http",
+          "host": "localhost",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "keycloak-realm-config",
+      "node-type": "data-asset",
+      "name": "Keycloak Realm Configuration",
+      "description": "The imported realm definition for calm-local that provisions the calm-web client and the local test user used by the authentication stack.",
+      "environment": "local-development"
     },
     {
       "unique-id": "repository-static-content",
@@ -50,14 +90,14 @@
       "unique-id": "docker-container",
       "node-type": "container",
       "name": "Docker Container",
-      "description": "A container grouping that hosts the nginx web server and the static content assets for the repository.",
+      "description": "A container grouping that hosts the nginx web server, oauth2-proxy, Keycloak, and the repository static content assets for the local stack.",
       "environment": "local-development"
     }
   ],
   "relationships": [
     {
       "unique-id": "user-to-nginx",
-      "description": "Architects request the repository's static web site and assets from the nginx server over HTTP.",
+      "description": "Architects request the repository's static web site and assets from the nginx server over HTTP and HTTPS.",
       "dataClassification": "public",
       "encrypted": false,
       "relationship-type": {
@@ -73,7 +113,7 @@
     },
     {
       "unique-id": "user-to-validation-script",
-      "description": "Run validation tests as an architect", 
+      "description": "Run validation tests as an architect",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -97,6 +137,70 @@
           },
           "destination": {
             "node": "repository-static-content"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-oauth2-proxy",
+      "description": "Nginx routes authentication callbacks and auth checks to oauth2-proxy so the site can be protected by Keycloak-backed OIDC.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "oauth2-proxy-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-keycloak",
+      "description": "oauth2-proxy validates users and tokens against the Keycloak realm during sign-in and session exchange.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "oauth2-proxy-service"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-keycloak",
+      "description": "Nginx exposes Keycloak's admin and OIDC endpoints under /keycloak/ for local sign-in and realm management.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "keycloak-to-realm-config",
+      "description": "Keycloak loads the imported calm-local realm definition at startup so the calm-web client and test user are available.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "keycloak-service"
+          },
+          "destination": {
+            "node": "keycloak-realm-config"
           }
         }
       }
@@ -135,7 +239,7 @@
     },
     {
       "unique-id": "container-composed-of",
-      "description": "The Docker container groups the nginx web server and the repository static content assets.",
+      "description": "The Docker container groups the nginx web server, oauth2-proxy, Keycloak, and the repository static content assets.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -143,6 +247,9 @@
           "container": "docker-container",
           "nodes": [
             "nginx-static-server",
+            "oauth2-proxy-service",
+            "keycloak-service",
+            "keycloak-realm-config",
             "repository-static-content"
           ]
         }
