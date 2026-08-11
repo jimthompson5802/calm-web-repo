@@ -26,8 +26,8 @@ following industry-standard protocols is supported without modification to this 
 | API Key | — (de facto standard) | `api-key` | AWS API Gateway, Kong, Apigee, custom gateways |
 | Proprietary / non-standard flows | org-defined | `custom` (external package) | Any IDP with a vendor SDK — PingFederate SAML adapters, Symantec SiteMinder, CA SSO, bespoke corporate SSO |
 
-For IDPs that implement OAuth 2.0 Client Credentials or PKCE, the built-in `ClientCredentialsIdpClient`
-or `PkceIdpClient` can be used directly via configuration — **no custom code is required**. The
+For IDPs that implement OAuth 2.0 Client Credentials or PKCE, the design proposes built-in  `ClientCredentialsIdpClient`
+or `PkceIdpClient` that can be used directly via configuration — **no custom code is required**. The
 `custom` type exists for IDPs with proprietary SDKs, non-standard grant types, or additional
 org-specific logic (e.g., certificate pinning, custom claim validation, SAML-based flows).
 
