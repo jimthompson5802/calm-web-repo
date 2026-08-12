@@ -2,10 +2,13 @@
 
 ## Scope
 
-- Nginx is static-only for now.
-- Static content is intentionally anonymous and public.
+- Nginx is static-first for repo content in the current local stack.
+- Static content is served over authenticated HTTPS backed by Keycloak.
+- `oauth2-proxy` sits in front of normal content requests.
+- `/healthz` is the anonymous operational endpoint.
+- `/keycloak/` is exposed for the local auth and admin flow.
 - `/api` is reserved for future reverse proxying.
-- CALM model files live under `static/` and are served over HTTP by the static server.
+- CALM model files live under `static/` and are rendered into the served static tree for the HTTPS stack.
 
 ## Layout
 
