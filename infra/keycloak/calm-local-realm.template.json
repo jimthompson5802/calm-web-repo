@@ -35,10 +35,16 @@
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
       "protocolMappers": [
         {
           "name": "calm-cli-audience",

@@ -7,7 +7,7 @@ Node/TypeScript CLI for fetching CALM files from the local Keycloak-protected ng
 - Node.js
 - npm
 - The local web stack running via `make start-web-server`
-- Valid Keycloak user credentials from the local realm
+- A browser available on the local machine
 
 The protected CALM files in this repo are served from `https://localhost:8443/...`.
 
@@ -27,35 +27,38 @@ cd apps/web
 npm run getfile:build
 ```
 
-This compiles the CLI to `apps/web/getfile/dist/main.js`.
+This compiles the CLI to `apps/web/getfile/dist/`.
 
 ## Run
 
 From `apps/web`:
 
 ```sh
-npm run getfile -- https://localhost:8443/architectures/calm-1.json --username local-user --password 'your-password'
+npm run getfile -- https://localhost:8443/architectures/calm-1.json
 ```
 
 Or run the compiled file directly:
 
 ```sh
 cd apps/web
-node getfile/dist/main.js https://localhost:8443/architectures/calm-1.json --username local-user --password 'your-password'
+node getfile/dist/main.js https://localhost:8443/architectures/calm-1.json
 ```
+
+When authentication is required, `getfile` opens the default browser and sends you to the local Keycloak login page. After you finish the browser login flow, the CLI exchanges the returned authorization code for a token and fetches the requested file.
 
 ## Usage
 
 ```text
-getfile <url> --username <value> --password <value> [--insecure-localhost]
+getfile <url> [--insecure-localhost]
 ```
 
-Only `https://` target URLs are supported.
+Only `https://localhost:8443/...` target URLs are supported in this version.
 
 The command:
 
-- requests a Keycloak access token using the `calm-cli` client
-- sends that token as a bearer token to the target URL
+- opens the browser for Keycloak authentication when needed
+- uses OAuth Authorization Code with PKCE
+- sends the returned access token as a bearer token to the target URL
 - writes the response body to stdout
 - writes errors to stderr and exits non-zero on failure
 
@@ -67,13 +70,12 @@ It only applies to local HTTPS targets and does not enable plain HTTP.
 Example:
 
 ```sh
-npm run getfile -- https://localhost:8443/architectures/calm-1.json --username local-user --password 'your-password' --insecure-localhost
+npm run getfile -- https://localhost:8443/architectures/calm-1.json --insecure-localhost
 ```
-
-This flag is only accepted for `localhost`, `127.0.0.1`, or `::1`.
 
 ## Notes
 
-- The CLI is intended for this repo's local development stack.
-- Credentials are passed explicitly as command-line flags.
+- This CLI is intentionally scoped to the repo's local development stack.
+- Tokens are kept in memory for the current invocation only.
+- Each invocation may open the browser again. If you already have an active Keycloak session, you may not need to re-enter credentials.
 - `npm run test:getfile` runs the focused CLI tests.
