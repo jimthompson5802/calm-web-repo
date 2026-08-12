@@ -181,6 +181,20 @@ test("rejects the removed username/password options", async () => {
   assert.equal(stdout.toString(), "");
 });
 
+test("rejects a missing --browser value", async () => {
+  const stdout = createCaptureStream();
+  const stderr = createCaptureStream();
+
+  const code = await runCli(
+    ["https://localhost:8443/architectures/calm-1.json", "--browser"],
+    { stderr, stdout },
+  );
+
+  assert.equal(code, 1);
+  assert.match(stderr.toString(), /Missing value for --browser\./);
+  assert.equal(stdout.toString(), "");
+});
+
 test("builds a PKCE authorization URL for the local stack", () => {
   const authUrl = buildAuthorizationUrl(
     "http://127.0.0.1:51004/oauth/callback",
@@ -217,6 +231,34 @@ test("prints a manual auth URL when the browser cannot be opened", async () => {
     });
 
     assert.equal(code, 1);
+    assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/127\.0\.0\.1:/);
+    assert.match(stderr.toString(), /Unable to open browser automatically\. Open this URL manually:\nhttps:\/\/127\.0\.0\.1:/);
+    assert.equal(stdout.toString(), "");
+  });
+});
+
+test("passes the selected browser app to the opener", async () => {
+  await withHttpsFixture((request, response) => {
+    response.writeHead(404);
+    response.end();
+  }, async (origin) => {
+    const stdout = createCaptureStream();
+    const stderr = createCaptureStream();
+    const code = await runCli(
+      [`${origin}/architectures/calm-1.json`, "--insecure-localhost", "--browser", "Google Chrome"],
+      {
+        browserOpener: async (_authUrl, browser) => {
+          assert.equal(browser, "Google Chrome");
+          throw new Error("browser unavailable");
+        },
+        stackOrigin: origin,
+        stderr,
+        stdout,
+      },
+    );
+
+    assert.equal(code, 1);
+    assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/127\.0\.0\.1:/);
     assert.match(stderr.toString(), /Unable to open browser automatically\. Open this URL manually:\nhttps:\/\/127\.0\.0\.1:/);
     assert.equal(stdout.toString(), "");
   });
@@ -251,6 +293,7 @@ test("fails when the callback state does not match", async () => {
     });
 
     assert.equal(code, 1);
+    assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/127\.0\.0\.1:/);
     assert.match(stderr.toString(), /Authentication state did not match the login request\./);
     assert.equal(stdout.toString(), "");
   });
@@ -310,7 +353,7 @@ test("fetches a protected file after browser login", async () => {
 
     assert.equal(code, 0);
     assert.equal(stdout.toString(), '{"name":"calm-1"}');
-    assert.equal(stderr.toString(), "");
+    assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/127\.0\.0\.1:/);
   });
 });
 
@@ -352,6 +395,7 @@ test("exits non-zero when the protected file returns a non-2xx status", async ()
     });
 
     assert.equal(code, 1);
+    assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/127\.0\.0\.1:/);
     assert.match(stderr.toString(), /File request failed with status 404/);
     assert.equal(stdout.toString(), "");
   });

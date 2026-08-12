@@ -37,6 +37,13 @@ From `apps/web`:
 npm run getfile -- https://localhost:8443/architectures/calm-1.json
 ```
 
+To target a specific browser app instead of the system default, pass `--browser`.
+For example on macOS:
+
+```sh
+npm run getfile -- https://localhost:8443/architectures/calm-1.json --browser "Google Chrome"
+```
+
 Or run the compiled file directly:
 
 ```sh
@@ -49,7 +56,7 @@ When authentication is required, `getfile` opens the default browser and sends y
 ## Usage
 
 ```text
-getfile <url> [--insecure-localhost]
+getfile <url> [--browser <app>] [--insecure-localhost]
 ```
 
 Only `https://localhost:8443/...` target URLs are supported in this version.

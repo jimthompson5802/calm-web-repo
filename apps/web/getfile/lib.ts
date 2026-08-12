@@ -12,9 +12,10 @@ const CALLBACK_TIMEOUT_MS = 120_000;
 const CLIENT_ID = "calm-cli";
 const TOKEN_PATH = "/keycloak/realms/calm-local/protocol/openid-connect/token";
 
-export type BrowserOpener = (url: string) => Promise<void>;
+export type BrowserOpener = (url: string, browser?: string) => Promise<void>;
 
 export type CliOptions = {
+  browser?: string;
   insecureLocalhost: boolean;
   url: URL;
 };
@@ -55,7 +56,7 @@ function writeTo(stream: WritableLike, chunk: string | Buffer): void {
 
 export function usage(): string {
   return [
-    "Usage: getfile <url> [--insecure-localhost]",
+    "Usage: getfile <url> [--browser <app>] [--insecure-localhost]",
     "",
     "Fetch a protected CALM file from the local Keycloak-protected stack.",
     "The browser will open for login when authentication is required.",
@@ -71,6 +72,7 @@ function createHttpsOriginError(stackOrigin: string): Error {
 }
 
 export function parseArgs(argv: string[], stackOrigin = LOCAL_STACK_ORIGIN): ParsedArgs {
+  let browser: string | undefined;
   let insecureLocalhost = false;
   let rawUrl: string | undefined;
 
@@ -83,6 +85,17 @@ export function parseArgs(argv: string[], stackOrigin = LOCAL_STACK_ORIGIN): Par
 
     if (arg === "--insecure-localhost") {
       insecureLocalhost = true;
+      continue;
+    }
+
+    if (arg === "--browser") {
+      const value = argv[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing value for --browser.");
+      }
+
+      browser = value;
+      index += 1;
       continue;
     }
 
@@ -125,6 +138,7 @@ export function parseArgs(argv: string[], stackOrigin = LOCAL_STACK_ORIGIN): Par
   }
 
   return {
+    browser,
     insecureLocalhost,
     url,
   };
@@ -323,20 +337,24 @@ export async function startLoopbackCallbackServer(
   };
 }
 
-function browserLaunchArgs(url: string): { args: string[]; command: string } {
+function browserLaunchArgs(url: string, browser?: string): { args: string[]; command: string } {
   if (process.platform === "darwin") {
-    return { args: [url], command: "open" };
+    return browser
+      ? { args: ["-a", browser, url], command: "open" }
+      : { args: [url], command: "open" };
   }
 
   if (process.platform === "win32") {
-    return { args: ["/c", "start", "", url], command: "cmd" };
+    return browser
+      ? { args: ["/c", "start", "", browser, url], command: "cmd" }
+      : { args: ["/c", "start", "", url], command: "cmd" };
   }
 
-  return { args: [url], command: "xdg-open" };
+  return browser ? { args: [url], command: browser } : { args: [url], command: "xdg-open" };
 }
 
-export async function openBrowser(url: string): Promise<void> {
-  const launch = browserLaunchArgs(url);
+export async function openBrowser(url: string, browser?: string): Promise<void> {
+  const launch = browserLaunchArgs(url, browser);
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn(launch.command, launch.args, { stdio: "ignore" });
@@ -467,6 +485,7 @@ async function exchangeAuthorizationCode(
 async function authenticateViaBrowser(options: CliOptions, runtime: RunCliOptions): Promise<string> {
   const stackOrigin = runtime.stackOrigin ?? LOCAL_STACK_ORIGIN;
   const opener = runtime.browserOpener ?? openBrowser;
+  const stderr = runtime.stderr ?? process.stderr;
   const state = createState();
   const pkce = createPkcePair();
   const callbackServer = await startLoopbackCallbackServer(state, runtime.callbackTimeoutMs);
@@ -476,9 +495,10 @@ async function authenticateViaBrowser(options: CliOptions, runtime: RunCliOption
     pkce.codeChallenge,
     stackOrigin,
   );
+  writeTo(stderr, `Opening browser for authentication:\n${authorizationUrl}\n`);
 
   try {
-    await opener(authorizationUrl.toString());
+    await opener(authorizationUrl.toString(), options.browser);
   } catch {
     await callbackServer.close();
     throw new Error(`Unable to open browser automatically. Open this URL manually:\n${authorizationUrl}`);
