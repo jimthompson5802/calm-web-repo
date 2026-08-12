@@ -1,6 +1,6 @@
 ## Notes as of 2026-08-08
 
-These notes describe CALM CLI document-loading behavior and example validation outputs. Repository content is now served only through authenticated `https://localhost:8443`, and the checked-in validation script is pending a separate follow-up before it can run against the current auth-only stack. The URL examples below are normalized to the current HTTPS origin for documentation consistency.
+These notes describe CALM CLI document-loading behavior and example validation outputs. Repository content is now served only through authenticated `https://my-arch.repo:8443`, and the checked-in validation script is pending a separate follow-up before it can run against the current auth-only stack. The URL examples below are normalized to the current HTTPS origin for documentation consistency.
 
 ## Test of validating architectures with `details.detailed-architecture` references, pattern/standards and controls
 
@@ -10,12 +10,12 @@ $ ./scripts/validate-architecture.sh
 
 
 Validating top level CALM architecture files with valid detailed architectures...NO ERRORS EXPECTED
-+ calm validate -a https://localhost:8443/architectures/calm-3.json
++ calm validate -a https://my-arch.repo:8443/architectures/calm-3.json
 (node:67439) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],
@@ -26,12 +26,12 @@ info [calm-validate]:     Formatting output as json
 
 
 Valid detailed architecture file...NO ERRORS EXPECTED
-+ calm validate -a https://localhost:8443/architectures/calm-hub-detail.architecture.json
++ calm validate -a https://my-arch.repo:8443/architectures/calm-hub-detail.architecture.json
 (node:67440) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],
@@ -43,12 +43,12 @@ info [calm-validate]:     Formatting output as json
 
 
 Valid top-level architecture that references a detailed architecture with an error in it. No Errors flagged
-+ calm validate -a https://localhost:8443/architectures/calm-3-ref-bad.json
++ calm validate -a https://my-arch.repo:8443/architectures/calm-3-ref-bad.json
 (node:67454) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],
@@ -60,12 +60,12 @@ info [calm-validate]:     Formatting output as json
 
 
 Detailed architecture with an error in it. ERRORS EXPECTED
-+ calm validate -a https://localhost:8443/architectures/calm-hub-detail.architecture-bad.json
++ calm validate -a https://my-arch.repo:8443/architectures/calm-hub-detail.architecture-bad.json
 (node:67455) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],
@@ -102,12 +102,12 @@ info [calm-validate]:     Formatting output as json
 
 
 Validate architecture against pattern/standards NO ERRORS EXPECTED
-+ calm validate -a https://localhost:8443/architectures/generated-webapp.json -p https://localhost:8443/patterns/company-base-pattern.json
++ calm validate -a https://my-arch.repo:8443/architectures/generated-webapp.json -p https://my-arch.repo:8443/patterns/company-base-pattern.json
 (node:67458) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],
@@ -119,12 +119,12 @@ info [calm-validate]:     Formatting output as json
 
 
 Validate architecture with Controls.  NO ERRORS EXPECTED
-+ calm validate -a https://localhost:8443/architectures/ecommerce-platform.json
++ calm validate -a https://my-arch.repo:8443/architectures/ecommerce-platform.json
 (node:67459) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://localhost:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://localhost:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [],

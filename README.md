@@ -2,7 +2,7 @@
 
 Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development serves repository content only over authenticated HTTPS backed by Keycloak, with an anonymous HTTPS health check for operational use.
 
-The local auth stack may use a detected non-loopback host IP for issuer and login URLs so both the browser and the Docker containers can reach the same Keycloak origin. `make start-web-server` prints the host it selected.
+The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web-server` resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed CALM Architecture
 [CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
@@ -34,6 +34,7 @@ The local auth stack may use a detected non-loopback host IP for issuer and logi
 - `uv`
 - Node.js (LTS recommended)
 - npm
+- A local hosts-file entry such as `127.0.0.1 my-arch.repo`
 
 ## Commands
 
@@ -52,7 +53,8 @@ The local auth stack may use a detected non-loopback host IP for issuer and logi
 
 ## Control Authoring Note
 
-- In `static/architectures/ecommerce-platform.json`, control `requirement-url` values point to assets served from `https://localhost:8443/controls/...`.
+- The tracked CALM source files under `static/` still use `https://localhost:8443/...` as a host-agnostic source placeholder.
+- `make start-web-server` renders a served copy under `infra/nginx/rendered-static/` and rewrites those absolute JSON URLs to `https://${CALM_PUBLIC_HOST}:8443/...` before nginx starts.
 - Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
 - Keep control configs in `static/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
 
@@ -62,21 +64,21 @@ Static content is available only through the authenticated HTTPS endpoint. The o
 
 Sample authenticated URLs after `make start-web-server`:
 
-- `https://localhost:8443/`
-- `https://localhost:8443/architectures/calm-1.json`
-- `https://localhost:8443/patterns/company-base-pattern.json`
-- `https://localhost:8443/standards/company-node-standard.json`
-- `https://localhost:8443/controls/security/schemas/tls-encryption.json`
+- `https://my-arch.repo:8443/`
+- `https://my-arch.repo:8443/architectures/calm-1.json`
+- `https://my-arch.repo:8443/patterns/company-base-pattern.json`
+- `https://my-arch.repo:8443/standards/company-node-standard.json`
+- `https://my-arch.repo:8443/controls/security/schemas/tls-encryption.json`
 
 Anonymous health check:
 
-- `https://localhost:8443/healthz`
+- `https://my-arch.repo:8443/healthz`
 
 The Keycloak admin console uses the same HTTPS origin:
 
-- `https://localhost:8443/keycloak/admin/master/console/`
+- `https://my-arch.repo:8443/keycloak/admin/master/console/`
 
-For bearer-token CLI flows such as `getfile`, the browser login may open on the detected shared local-stack host instead of `localhost`. Use the host printed by `make start-web-server` if you need to inspect or troubleshoot that origin directly.
+For bearer-token CLI flows such as `getfile`, `my-arch.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
 
 ## Install
 
@@ -99,12 +101,14 @@ npm install
 ### Start
 
 1. Copy `.env.example` to `.env`.
-2. Set local-only values for:
+2. Ensure your local resolver maps `my-arch.repo` to `127.0.0.1`.
+3. Set local-only values for:
+   - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
    - `OAUTH2_PROXY_CLIENT_SECRET`
    - `OAUTH2_PROXY_COOKIE_SECRET`
    - `KEYCLOAK_TEST_USER_PASSWORD`
-3. Start the full local stack:
+4. Start the full local stack:
 
 ```sh
 make start-web-server
@@ -112,9 +116,10 @@ make start-web-server
 
 `make start-web-server` will:
 
-- detect a shared local-stack host IP and export it as `CALM_PUBLIC_HOST` for the startup sequence
+- resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
 - run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
+- run `./scripts/render-static-content.py` to create the served `infra/nginx/rendered-static/` tree with absolute JSON URLs rewritten to the configured HTTPS origin
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through authenticated HTTPS
 - serve the Keycloak admin console through the HTTPS Keycloak path

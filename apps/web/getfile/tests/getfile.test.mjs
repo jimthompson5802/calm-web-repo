@@ -19,6 +19,10 @@ const {
   runCli,
 } = await import(libraryPath);
 
+function escapeForRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function createCaptureStream() {
   const chunks = [];
 
@@ -148,7 +152,13 @@ test("rejects non-local stack URLs", async () => {
   const code = await runCli(["https://example.com/architectures/calm-1.json"], { stderr, stdout });
 
   assert.equal(code, 1);
-  assert.match(stderr.toString(), /Only https:\/\/localhost:8443\/\.\.\. URLs are supported\./);
+  const expectedMessage =
+    LOCAL_STACK_ORIGIN === "https://localhost:8443"
+      ? /Only https:\/\/localhost:8443\/\.\.\. URLs are supported\./
+      : new RegExp(
+          `Only https://localhost:8443/\\.\\.\\. or ${escapeForRegExp(LOCAL_STACK_ORIGIN)}/\\.\\.\\. URLs are supported\\.`,
+        );
+  assert.match(stderr.toString(), expectedMessage);
   assert.equal(stdout.toString(), "");
 });
 
@@ -228,6 +238,22 @@ test("accepts localhost file URLs when the auth origin uses a shared local-stack
 
   assert.equal(code, 1);
   assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/192\.168\.0\.20:8443\//);
+});
+
+test("accepts configured hostname file URLs", async () => {
+  const stdout = createCaptureStream();
+  const stderr = createCaptureStream();
+  const code = await runCli(["https://my-arch.repo:8443/architectures/calm-1.json"], {
+    browserOpener: async () => {
+      throw new Error("browser unavailable");
+    },
+    stackOrigin: "https://my-arch.repo:8443",
+    stderr,
+    stdout,
+  });
+
+  assert.equal(code, 1);
+  assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/my-arch\.repo:8443\//);
 });
 
 test("prints a manual auth URL when the browser cannot be opened", async () => {

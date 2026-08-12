@@ -17,5 +17,6 @@ coverage/
 *.pyc
 docs/website/
 infra/nginx/certs/
+infra/nginx/rendered-static/
 infra/keycloak/import/
 apps/web/getfile/tests/fixtures/

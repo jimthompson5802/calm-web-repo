@@ -9,7 +9,7 @@ Node/TypeScript CLI for fetching CALM files from the local Keycloak-protected ng
 - The local web stack running via `make start-web-server`
 - A browser available on the local machine
 
-The protected CALM files in this repo are served from `https://localhost:8443/...`, and the auth flow may open a shared detected local-stack host so both the browser and Docker containers can reach the same Keycloak issuer.
+The protected CALM files in this repo are canonically served from `https://my-arch.repo:8443/...`. `localhost` remains accepted for compatibility when the local stack origin file points at a different host.
 
 ## Install
 
@@ -34,23 +34,23 @@ This compiles the CLI to `apps/web/getfile/dist/`.
 From `apps/web`:
 
 ```sh
-npm run getfile -- https://localhost:8443/architectures/calm-1.json
+npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json
 ```
 
-If `make start-web-server` reports a detected stack host such as `192.168.x.y`, `getfile` may open the browser on that host even when the file URL you pass is still `https://localhost:8443/...`.
+If you override `CALM_PUBLIC_HOST`, `getfile` uses the configured stack origin written by `make start-web-server` so both the browser and Docker containers can reach the same Keycloak issuer.
 
 To target a specific browser app instead of the system default, pass `--browser`.
 For example on macOS:
 
 ```sh
-npm run getfile -- https://localhost:8443/architectures/calm-1.json --browser "Google Chrome"
+npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json --browser "Google Chrome"
 ```
 
 Or run the compiled file directly:
 
 ```sh
 cd apps/web
-node getfile/dist/main.js https://localhost:8443/architectures/calm-1.json
+node getfile/dist/main.js https://my-arch.repo:8443/architectures/calm-1.json
 ```
 
 When authentication is required, `getfile` opens the default browser and sends you to the local Keycloak login page. After you finish the browser login flow, the CLI exchanges the returned authorization code for a token and fetches the requested file.
@@ -63,8 +63,9 @@ getfile <url> [--browser <app>] [--insecure-localhost]
 
 Only the local stack origins are supported in this version:
 
+- `https://my-arch.repo:8443/...`
 - `https://localhost:8443/...`
-- the detected shared local-stack host written by `make start-web-server`
+- the configured stack origin written by `make start-web-server`, such as `https://my-arch.repo:8443/...`
 
 The command:
 
@@ -82,7 +83,7 @@ It applies to the supported local HTTPS origins only and does not enable plain H
 Example:
 
 ```sh
-npm run getfile -- https://localhost:8443/architectures/calm-1.json --insecure-localhost
+npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json --insecure-localhost
 ```
 
 ## Notes

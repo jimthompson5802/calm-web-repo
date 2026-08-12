@@ -17,7 +17,7 @@ The script covers these scenarios:
 
 ## Prerequisites
 
-- The local web stack now serves repository content over authenticated `https://localhost:8443`.
+- The local web stack now serves repository content over authenticated `https://my-arch.repo:8443`.
 - The `calm` CLI must be installed and available on `PATH`.
 - The repository's static assets must be available under the expected paths such as `/architectures` and `/patterns`.
 
