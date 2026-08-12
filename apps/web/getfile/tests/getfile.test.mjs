@@ -197,7 +197,7 @@ test("rejects a missing --browser value", async () => {
 
 test("builds a PKCE authorization URL for the local stack", () => {
   const authUrl = buildAuthorizationUrl(
-    "http://127.0.0.1:51004/oauth/callback",
+    "http://127.0.0.1:51004",
     "state-123",
     "challenge-abc",
     LOCAL_STACK_ORIGIN,
@@ -211,7 +211,23 @@ test("builds a PKCE authorization URL for the local stack", () => {
   assert.equal(authUrl.searchParams.get("state"), "state-123");
   assert.equal(authUrl.searchParams.get("code_challenge"), "challenge-abc");
   assert.equal(authUrl.searchParams.get("code_challenge_method"), "S256");
-  assert.equal(authUrl.searchParams.get("redirect_uri"), "http://127.0.0.1:51004/oauth/callback");
+  assert.equal(authUrl.searchParams.get("redirect_uri"), "http://127.0.0.1:51004");
+});
+
+test("accepts localhost file URLs when the auth origin uses a shared local-stack host", async () => {
+  const stdout = createCaptureStream();
+  const stderr = createCaptureStream();
+  const code = await runCli(["https://localhost:8443/architectures/calm-1.json"], {
+    browserOpener: async (_authUrl) => {
+      throw new Error("browser unavailable");
+    },
+    stackOrigin: "https://192.168.0.20:8443",
+    stderr,
+    stdout,
+  });
+
+  assert.equal(code, 1);
+  assert.match(stderr.toString(), /Opening browser for authentication:\nhttps:\/\/192\.168\.0\.20:8443\//);
 });
 
 test("prints a manual auth URL when the browser cannot be opened", async () => {

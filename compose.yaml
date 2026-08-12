@@ -20,7 +20,7 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_REVERSE_PROXY: "true"
       OAUTH2_PROXY_UPSTREAMS: static://202
-      OAUTH2_PROXY_REDIRECT_URL: https://localhost:8443/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: https://${CALM_PUBLIC_HOST:-localhost}:8443/oauth2/callback
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
@@ -30,15 +30,15 @@ services:
       OAUTH2_PROXY_CLIENT_ID: calm-web
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: https://localhost:8443/keycloak/realms/calm-local
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
-      OAUTH2_PROXY_LOGIN_URL: https://localhost:8443/keycloak/realms/calm-local/protocol/openid-connect/auth
+      OAUTH2_PROXY_LOGIN_URL: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/token
       OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/certs
       OAUTH2_PROXY_PROFILE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
       OAUTH2_PROXY_VALIDATE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
       OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS: "true"
-      OAUTH2_PROXY_EXTRA_JWT_ISSUERS: https://localhost:8443/keycloak/realms/calm-local=calm-cli
+      OAUTH2_PROXY_EXTRA_JWT_ISSUERS: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local=calm-cli
       OAUTH2_PROXY_BEARER_TOKEN_LOGIN_FALLBACK: "false"
     restart: unless-stopped
   keycloak:
@@ -51,7 +51,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
-      KC_HOSTNAME: https://localhost:8443/keycloak
+      KC_HOSTNAME: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     volumes:
       - ./infra/keycloak/import:/opt/keycloak/data/import:ro

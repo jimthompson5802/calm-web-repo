@@ -1,13 +1,19 @@
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { request as httpsRequest, type RequestOptions as HttpsRequestOptions } from "node:https";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export const LOCAL_STACK_ORIGIN = "https://localhost:8443";
+const LOCALHOST_ORIGIN = "https://localhost:8443";
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+const STACK_ORIGIN_FILE = path.join(REPO_ROOT, "infra", "keycloak", "import", "stack-origin.txt");
+export const LOCAL_STACK_ORIGIN = getConfiguredStackOrigin();
 const AUTHORIZATION_PATH = "/keycloak/realms/calm-local/protocol/openid-connect/auth";
 const CALLBACK_HOST = "127.0.0.1";
-const CALLBACK_PATH = "/oauth/callback";
+const CALLBACK_PATH = "/";
 const CALLBACK_TIMEOUT_MS = 120_000;
 const CLIENT_ID = "calm-cli";
 const TOKEN_PATH = "/keycloak/realms/calm-local/protocol/openid-connect/token";
@@ -67,8 +73,36 @@ function isLoopbackHost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
 }
 
+function getConfiguredStackOrigin(): string {
+  const configuredOrigin = process.env.CALM_PUBLIC_ORIGIN?.trim();
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  const configuredHost = process.env.CALM_PUBLIC_HOST?.trim();
+  if (configuredHost) {
+    return `https://${configuredHost}:8443`;
+  }
+
+  if (existsSync(STACK_ORIGIN_FILE)) {
+    const fileValue = readFileSync(STACK_ORIGIN_FILE, "utf-8").trim();
+    if (fileValue) {
+      return fileValue;
+    }
+  }
+
+  return LOCALHOST_ORIGIN;
+}
+
+function allowedOrigins(stackOrigin: string): string[] {
+  return stackOrigin === LOCALHOST_ORIGIN ? [LOCALHOST_ORIGIN] : [LOCALHOST_ORIGIN, stackOrigin];
+}
+
 function createHttpsOriginError(stackOrigin: string): Error {
-  return new Error(`Only ${stackOrigin}/... URLs are supported.`);
+  const origins = allowedOrigins(stackOrigin).map((origin) => `${origin}/...`);
+  return origins.length === 1
+    ? new Error(`Only ${origins[0]} URLs are supported.`)
+    : new Error(`Only ${origins[0]} or ${origins[1]} URLs are supported.`);
 }
 
 export function parseArgs(argv: string[], stackOrigin = LOCAL_STACK_ORIGIN): ParsedArgs {
@@ -129,12 +163,15 @@ export function parseArgs(argv: string[], stackOrigin = LOCAL_STACK_ORIGIN): Par
     throw new Error("Only https:// URLs are supported.");
   }
 
-  if (url.origin !== stackOrigin) {
+  if (!allowedOrigins(stackOrigin).includes(url.origin)) {
     throw createHttpsOriginError(stackOrigin);
   }
 
-  if (insecureLocalhost && !isLoopbackHost(url.hostname)) {
-    throw new Error("--insecure-localhost can only be used with localhost, 127.0.0.1, or ::1 URLs.");
+  const stackHost = new URL(stackOrigin).hostname;
+  if (insecureLocalhost && !isLoopbackHost(url.hostname) && url.hostname !== stackHost) {
+    throw new Error(
+      "--insecure-localhost can only be used with localhost, 127.0.0.1, ::1, or the configured local stack host.",
+    );
   }
 
   return {
@@ -332,7 +369,7 @@ export async function startLoopbackCallbackServer(
 
   return {
     close: async () => closeServer(server),
-    redirectUri: `http://${CALLBACK_HOST}:${address.port}${CALLBACK_PATH}`,
+    redirectUri: `http://${CALLBACK_HOST}:${address.port}`,
     waitForCode,
   };
 }
@@ -537,9 +574,10 @@ async function fetchProtectedFile(options: CliOptions, token: string): Promise<B
 export async function runCli(argv: string[], runtime: RunCliOptions = {}): Promise<number> {
   const stdout = runtime.stdout ?? process.stdout;
   const stderr = runtime.stderr ?? process.stderr;
+  const stackOrigin = runtime.stackOrigin ?? LOCAL_STACK_ORIGIN;
 
   try {
-    const parsed = parseArgs(argv, runtime.stackOrigin);
+    const parsed = parseArgs(argv, stackOrigin);
     if ("helpRequested" in parsed) {
       writeTo(stdout, `${usage()}\n`);
       return 0;

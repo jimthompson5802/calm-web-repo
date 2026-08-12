@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 
+from detect_public_host import detect_public_host
+
 
 REQUIRED_KEYS = [
     "OAUTH2_PROXY_CLIENT_SECRET",
@@ -34,6 +36,7 @@ def main() -> int:
     template_path = repo_root / "infra" / "keycloak" / "calm-local-realm.template.json"
     output_dir = repo_root / "infra" / "keycloak" / "import"
     output_path = output_dir / "calm-local-realm.json"
+    origin_path = output_dir / "stack-origin.txt"
 
     if not env_path.exists():
         raise SystemExit(
@@ -41,6 +44,8 @@ def main() -> int:
         )
 
     env = load_env(env_path)
+    public_host = detect_public_host()
+    public_origin = f"https://{public_host}:8443"
     missing = [key for key in REQUIRED_KEYS if not env.get(key)]
     if missing:
         raise SystemExit(
@@ -49,6 +54,7 @@ def main() -> int:
 
     template = template_path.read_text(encoding="utf-8")
     replacements = {
+        "__CALM_PUBLIC_ORIGIN__": public_origin,
         "__OAUTH2_PROXY_CLIENT_SECRET__": env["OAUTH2_PROXY_CLIENT_SECRET"],
         "__KEYCLOAK_TEST_USER_USERNAME__": env["KEYCLOAK_TEST_USER_USERNAME"],
         "__KEYCLOAK_TEST_USER_EMAIL__": env["KEYCLOAK_TEST_USER_EMAIL"],
@@ -62,6 +68,7 @@ def main() -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(rendered, indent=2) + "\n", encoding="utf-8")
+    origin_path.write_text(public_origin + "\n", encoding="utf-8")
     return 0
 
 

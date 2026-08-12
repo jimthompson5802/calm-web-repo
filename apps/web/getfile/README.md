@@ -9,7 +9,7 @@ Node/TypeScript CLI for fetching CALM files from the local Keycloak-protected ng
 - The local web stack running via `make start-web-server`
 - A browser available on the local machine
 
-The protected CALM files in this repo are served from `https://localhost:8443/...`.
+The protected CALM files in this repo are served from `https://localhost:8443/...`, and the auth flow may open a shared detected local-stack host so both the browser and Docker containers can reach the same Keycloak issuer.
 
 ## Install
 
@@ -37,6 +37,8 @@ From `apps/web`:
 npm run getfile -- https://localhost:8443/architectures/calm-1.json
 ```
 
+If `make start-web-server` reports a detected stack host such as `192.168.x.y`, `getfile` may open the browser on that host even when the file URL you pass is still `https://localhost:8443/...`.
+
 To target a specific browser app instead of the system default, pass `--browser`.
 For example on macOS:
 
@@ -59,7 +61,10 @@ When authentication is required, `getfile` opens the default browser and sends y
 getfile <url> [--browser <app>] [--insecure-localhost]
 ```
 
-Only `https://localhost:8443/...` target URLs are supported in this version.
+Only the local stack origins are supported in this version:
+
+- `https://localhost:8443/...`
+- the detected shared local-stack host written by `make start-web-server`
 
 The command:
 
@@ -71,8 +76,8 @@ The command:
 
 ## Local TLS
 
-Use `--insecure-localhost` only for local development when the localhost TLS certificate is self-signed or not trusted by your machine.
-It only applies to local HTTPS targets and does not enable plain HTTP.
+Use `--insecure-localhost` only for local development when the local stack certificate is self-signed or not trusted by your machine.
+It applies to the supported local HTTPS origins only and does not enable plain HTTP.
 
 Example:
 

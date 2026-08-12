@@ -2,6 +2,8 @@
 
 Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development serves repository content only over authenticated HTTPS backed by Keycloak, with an anonymous HTTPS health check for operational use.
 
+The local auth stack may use a detected non-loopback host IP for issuer and login URLs so both the browser and the Docker containers can reach the same Keycloak origin. `make start-web-server` prints the host it selected.
+
 ## Testbed CALM Architecture
 [CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
 
@@ -74,6 +76,8 @@ The Keycloak admin console uses the same HTTPS origin:
 
 - `https://localhost:8443/keycloak/admin/master/console/`
 
+For bearer-token CLI flows such as `getfile`, the browser login may open on the detected shared local-stack host instead of `localhost`. Use the host printed by `make start-web-server` if you need to inspect or troubleshoot that origin directly.
+
 ## Install
 
 Python (FUTURE WORK):
@@ -108,7 +112,8 @@ make start-web-server
 
 `make start-web-server` will:
 
-- run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing
+- detect a shared local-stack host IP and export it as `CALM_PUBLIC_HOST` for the startup sequence
+- run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through authenticated HTTPS

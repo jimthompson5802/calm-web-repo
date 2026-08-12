@@ -20,13 +20,13 @@
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "https://localhost:8443/oauth2/callback"
+        "__CALM_PUBLIC_ORIGIN__/oauth2/callback"
       ],
       "webOrigins": [
-        "https://localhost:8443"
+        "__CALM_PUBLIC_ORIGIN__"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "https://localhost:8443/*"
+        "post.logout.redirect.uris": "__CALM_PUBLIC_ORIGIN__/*"
       }
     },
     {

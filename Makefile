@@ -1,7 +1,10 @@
 # start up the nginx server to serve CALM content
 start-web-server:
-	./scripts/generate-local-certs.sh
-	./scripts/render-keycloak-realm.py
+	@host="$$(python3 ./scripts/detect_public_host.py)"; \
+	export CALM_PUBLIC_HOST="$$host"; \
+	echo "Using local stack host: $$host"; \
+	./scripts/generate-local-certs.sh; \
+	./scripts/render-keycloak-realm.py; \
 	docker-compose up -d keycloak oauth2-proxy nginx
 
 
