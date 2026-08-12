@@ -34,7 +34,10 @@ services:
       OAUTH2_PROXY_CLIENT_ID: calm-web
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_OIDC_EXTRA_AUDIENCES: calm-cli
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local
+      OAUTH2_PROXY_PROVIDER_CA_FILES: /etc/oauth2-proxy/certs/localhost.crt
+      OAUTH2_PROXY_USE_SYSTEM_TRUST_STORE: "true"
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_LOGIN_URL: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/token
@@ -44,6 +47,8 @@ services:
       OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS: "true"
       OAUTH2_PROXY_EXTRA_JWT_ISSUERS: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local=calm-cli
       OAUTH2_PROXY_BEARER_TOKEN_LOGIN_FALLBACK: "false"
+    volumes:
+      - ./infra/nginx/certs:/etc/oauth2-proxy/certs:ro
     restart: unless-stopped
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0
