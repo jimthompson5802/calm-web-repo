@@ -18,3 +18,4 @@ coverage/
 docs/website/
 infra/nginx/certs/
 infra/keycloak/import/
+apps/web/getfile/tests/fixtures/

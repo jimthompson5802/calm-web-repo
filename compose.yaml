@@ -37,6 +37,9 @@ services:
       OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/certs
       OAUTH2_PROXY_PROFILE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
       OAUTH2_PROXY_VALIDATE_URL: http://keycloak:8080/realms/calm-local/protocol/openid-connect/userinfo
+      OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS: "true"
+      OAUTH2_PROXY_EXTRA_JWT_ISSUERS: https://localhost:8443/keycloak/realms/calm-local=calm-cli
+      OAUTH2_PROXY_BEARER_TOKEN_LOGIN_FALLBACK: "false"
     restart: unless-stopped
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0
