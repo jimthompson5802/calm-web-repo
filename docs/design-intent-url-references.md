@@ -15,6 +15,8 @@ https://calmhub.example.com/patterns/company-control-pattern.json
 
 ![](./images/url-reference2.png)
 
+![](./images/url-reference3.png)
+
 and a `calm validate` execution in  CI/CD pipeline would have this form...
 
 ```
