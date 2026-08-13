@@ -53,7 +53,7 @@ cd apps/web
 node getfile/dist/main.js https://my-arch.repo:8443/architectures/calm-1.json
 ```
 
-When authentication is required, `getfile` opens the default browser and sends you to the local Keycloak login page. After you finish the browser login flow, the CLI exchanges the returned authorization code for a token and fetches the requested file.
+When authentication is required, `getfile` opens the default browser and sends you to the local Keycloak login page. After you finish the browser login flow, the CLI exchanges the returned authorization code for a token, caches that session locally, and fetches the requested file.
 
 ## Usage
 
@@ -71,7 +71,9 @@ The command:
 
 - opens the browser for Keycloak authentication when needed
 - uses OAuth Authorization Code with PKCE
-- sends the returned access token as a bearer token to the target URL
+- caches tokens per stack origin in `~/.calm/getfile-token.json`
+- silently refreshes the access token before it expires when a refresh token is available
+- sends the active access token as a bearer token to the target URL
 - writes the response body to stdout
 - writes errors to stderr and exits non-zero on failure
 
@@ -89,6 +91,7 @@ npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json --insecur
 ## Notes
 
 - This CLI is intentionally scoped to the repo's local development stack.
-- Tokens are kept in memory for the current invocation only.
-- Each invocation may open the browser again. If you already have an active Keycloak session, you may not need to re-enter credentials.
+- Cached sessions are stored per exact `stackOrigin`, so `https://localhost:8443` and `https://my-arch.repo:8443` keep separate entries.
+- The browser usually opens only on first login, when the cached session cannot be refreshed, or after the server rejects a cached token.
+- If the refresh token is still valid, `getfile` renews the access token automatically before making the file request.
 - `npm run test:getfile` runs the focused CLI tests.
