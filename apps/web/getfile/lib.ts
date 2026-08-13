@@ -105,6 +105,16 @@ class HttpResponseError extends Error {
   }
 }
 
+class TokenRequestError extends Error {
+  readonly statusCode: number;
+
+  constructor(prefix: string, response: ResponseData) {
+    super(describeTokenResponseFailure(prefix, response));
+    this.name = "TokenRequestError";
+    this.statusCode = response.statusCode;
+  }
+}
+
 function writeTo(stream: WritableLike, chunk: string | Buffer): void {
   stream.write(chunk);
 }
@@ -520,9 +530,23 @@ function getRequestBuffer(runtime: RunCliOptions): RequestBuffer {
   return runtime.requestBufferImpl ?? requestBuffer;
 }
 
-function describeResponseFailure(prefix: string, response: ResponseData): string {
+function describeRedirectLocation(response: ResponseData): string | undefined {
   const location = response.headers.location;
-  const redirectLocation = Array.isArray(location) ? location[0] : location;
+  return Array.isArray(location) ? location[0] : location;
+}
+
+function describeTokenResponseFailure(prefix: string, response: ResponseData): string {
+  const redirectLocation = describeRedirectLocation(response);
+
+  if (redirectLocation) {
+    return `${prefix} with status ${response.statusCode} and redirect to ${redirectLocation}`;
+  }
+
+  return `${prefix} with status ${response.statusCode}`;
+}
+
+function describeResponseFailure(prefix: string, response: ResponseData): string {
+  const redirectLocation = describeRedirectLocation(response);
   const bodyText = response.body.toString("utf-8").trim();
   const detail = bodyText ? `: ${bodyText}` : "";
 
@@ -764,7 +788,7 @@ async function requestToken(
   });
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(describeResponseFailure("Token request failed", response));
+    throw new TokenRequestError("Token request failed", response);
   }
 
   let payload: unknown;
@@ -910,8 +934,10 @@ async function acquireSession(
       logAuthEvent(runtime, `Saved refreshed session to cache at ${getCacheFilePath(runtime)}`);
       return { session: refreshedSession, source: "refresh" };
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      logAuthEvent(runtime, `Refresh failed; clearing cached session and falling back to browser authentication (${message})`);
+      const reason = error instanceof TokenRequestError
+        ? `token request failed with status ${error.statusCode}`
+        : "token refresh failed";
+      logAuthEvent(runtime, `Refresh failed; clearing cached session and falling back to browser authentication (${reason})`);
       try {
         await deleteCachedSession(stackOrigin, runtime);
         logAuthEvent(runtime, `Cleared cached session for ${stackOrigin}`);

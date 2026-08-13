@@ -182,6 +182,9 @@ function authRedirect(requestUrl, code, stateOverride) {
   return `${redirectUri}?code=${code}&state=${state}`;
 }
 
+const REFRESH_FAILURE_SECRET = "refresh-secret-value";
+const TOKEN_FAILURE_SECRET = "token-secret-value";
+
 function extractLifecycleLines(output) {
   return output
     .split("\n")
@@ -652,7 +655,7 @@ test("falls back to browser login when refresh fails and rewrites the cache", as
       if (params.get("grant_type") === "refresh_token") {
         refreshRequests += 1;
         return {
-          body: "refresh failed",
+          body: `refresh failed ${REFRESH_FAILURE_SECRET}`,
           headers: { "content-type": "text/plain" },
           statusCode: 400,
         };
@@ -705,12 +708,18 @@ test("falls back to browser login when refresh fails and rewrites the cache", as
 
     assert.equal(code, 0);
     assert.equal(stdout.toString(), '{"name":"browser"}');
-    assert.match(stderr.toString(), />>> Refresh failed; clearing cached session and falling back to browser authentication/);
+    assert.match(
+      stderr.toString(),
+      />>> Refresh failed; clearing cached session and falling back to browser authentication \(token request failed with status 400\)/,
+    );
     assert.match(stderr.toString(), />>> Cleared cached session for https:\/\/127\.0\.0\.1:8443/);
     assert.match(stderr.toString(), />>> Opening browser for authentication: https:\/\/127\.0\.0\.1:/);
     assert.match(stderr.toString(), />>> Authorization code exchange succeeded; access token expires in \d+s/);
     assertLifecycleLogs(stderr.toString());
-    assertNoSecretLeak([stderr.toString(), stdout.toString()], ["expired-token", "refresh-1", "browser-token", "browser-refresh"]);
+    assertNoSecretLeak(
+      [stderr.toString(), stdout.toString()],
+      ["expired-token", "refresh-1", "browser-token", "browser-refresh", REFRESH_FAILURE_SECRET],
+    );
     assert.equal(refreshRequests, 1);
     assert.equal(authRequests, 1);
     assert.equal(authCodeTokenRequests, 1);
@@ -718,6 +727,49 @@ test("falls back to browser login when refresh fails and rewrites the cache", as
     const cache = await readCacheFile(cacheFilePath);
     assert.equal(cache[TEST_ORIGIN].accessToken, "browser-token");
     assert.equal(cache[TEST_ORIGIN].refreshToken, "browser-refresh");
+  });
+});
+
+test("redacts token endpoint response bodies when authorization code exchange fails", async () => {
+  const callbackHarness = createMockCallbackHarness();
+  const transport = createMockTransport(async ({ method, url }) => {
+    if (method === "GET" && url.pathname === "/keycloak/realms/calm-local/protocol/openid-connect/auth") {
+      return {
+        headers: { location: authRedirect(url, "test-code") },
+        statusCode: 302,
+      };
+    }
+
+    if (method === "POST" && url.pathname === "/keycloak/realms/calm-local/protocol/openid-connect/token") {
+      return {
+        body: `authorization failed ${TOKEN_FAILURE_SECRET}`,
+        headers: { "content-type": "text/plain" },
+        statusCode: 400,
+      };
+    }
+
+    return { statusCode: 404 };
+  }, callbackHarness);
+
+  await withTempCache(async (cacheFilePath) => {
+    const stdout = createCaptureStream();
+    const stderr = createCaptureStream();
+    const code = await runCli([`${TEST_ORIGIN}/architectures/calm-1.json`, "--insecure-localhost"], {
+      browserOpener: transport.browserOpener,
+      cacheFilePath,
+      callbackServerFactory: callbackHarness.callbackServerFactory,
+      requestBufferImpl: transport.requestBufferImpl,
+      stackOrigin: TEST_ORIGIN,
+      stderr,
+      stdout,
+    });
+
+    assert.equal(code, 1);
+    assert.match(stderr.toString(), /Token request failed with status 400/);
+    assert.ok(!stderr.toString().includes(TOKEN_FAILURE_SECRET));
+    assert.ok(!stdout.toString().includes(TOKEN_FAILURE_SECRET));
+    assertLifecycleLogs(stderr.toString());
+    assert.equal(stdout.toString(), "");
   });
 });
 
@@ -1003,7 +1055,7 @@ test("exits non-zero when the protected file returns a non-2xx status", async ()
 
     assert.equal(code, 1);
     assert.match(stderr.toString(), />>> Opening browser for authentication: https:\/\/127\.0\.0\.1:/);
-    assert.match(stderr.toString(), /File request failed with status 404/);
+    assert.match(stderr.toString(), /File request failed with status 404: not found/);
     assertLifecycleLogs(stderr.toString());
     assertNoSecretLeak([stderr.toString(), stdout.toString()], ["good-token", "good-refresh"]);
     assert.equal(stdout.toString(), "");
