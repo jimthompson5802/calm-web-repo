@@ -1,0 +1,6 @@
+{
+  "https://calmhub.example.com/calm/namespaces/examples/patterns/two-node-secured-service/versions/1.0.0": "two-node.pattern.json",
+  "https://calmhub.example.com/calm/namespaces/examples/standards/two-node-secured-node/versions/1.0.0": "two-node.standard.json",
+  "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0": "access-control.requirement.json",
+  "https://calmhub.example.com/calm/domains/security/controls/node-access-control/configurations/shared/versions/1.0.0": "access-control.config.json"
+}

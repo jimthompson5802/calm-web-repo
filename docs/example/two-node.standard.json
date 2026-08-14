@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calmhub.example.com/calm/namespaces/examples/standards/two-node-secured-node/versions/1.0.0",
+  "title": "Two Node Secured Node Standard",
+  "description": "A node standard for the local CALM example that requires ownership and one shared access-control reference.",
+  "allOf": [
+    {
+      "$ref": "https://calm.finos.org/release/1.2/meta/core.json#/defs/node"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owning team for the node."
+        },
+        "controls": {
+          "$ref": "https://calm.finos.org/release/1.2/meta/control.json#/defs/controls",
+          "type": "object",
+          "properties": {
+            "security": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "const": "Access control applied to the node"
+                },
+                "requirements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "prefixItems": [
+                    {
+                      "$ref": "https://calm.finos.org/release/1.2/meta/control.json#/defs/control-detail",
+                      "properties": {
+                        "requirement-url": {
+                          "const": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0"
+                        },
+                        "config-url": {
+                          "const": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/configurations/shared/versions/1.0.0"
+                        }
+                      },
+                      "required": [
+                        "requirement-url",
+                        "config-url"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "description",
+                "requirements"
+              ]
+            }
+          },
+          "required": [
+            "security"
+          ]
+        }
+      },
+      "required": [
+        "owner",
+        "controls"
+      ]
+    }
+  ]
+}

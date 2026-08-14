@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calmhub.example.com/calm/namespaces/examples/patterns/two-node-secured-service/versions/1.0.0",
+  "title": "Two Node Secured Service Pattern",
+  "description": "A local validation pattern with two secured nodes and one HTTP connection between them.",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "https://calmhub.example.com/calm/namespaces/examples/standards/two-node-secured-node/versions/1.0.0",
+          "type": "object",
+          "properties": {
+            "unique-id": {
+              "const": "web-frontend"
+            },
+            "node-type": {
+              "const": "webclient"
+            },
+            "name": {
+              "const": "Web Frontend"
+            },
+            "description": {
+              "const": "User-facing entry point for the example system"
+            }
+          }
+        },
+        {
+          "$ref": "https://calmhub.example.com/calm/namespaces/examples/standards/two-node-secured-node/versions/1.0.0",
+          "type": "object",
+          "properties": {
+            "unique-id": {
+              "const": "customer-api"
+            },
+            "node-type": {
+              "const": "service"
+            },
+            "name": {
+              "const": "Customer API"
+            },
+            "description": {
+              "const": "Backend API that serves customer profile data"
+            }
+          }
+        }
+      ]
+    },
+    "relationships": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "prefixItems": [
+        {
+          "$ref": "https://calm.finos.org/release/1.2/meta/core.json#/defs/relationship",
+          "type": "object",
+          "properties": {
+            "unique-id": {
+              "const": "web-frontend-to-customer-api"
+            },
+            "description": {
+              "const": "Fetch customer profile data"
+            },
+            "protocol": {
+              "const": "HTTP"
+            },
+            "relationship-type": {
+              "const": {
+                "connects": {
+                  "source": {
+                    "node": "web-frontend"
+                  },
+                  "destination": {
+                    "node": "customer-api"
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "unique-id",
+            "description",
+            "protocol",
+            "relationship-type"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "nodes",
+    "relationships"
+  ]
+}

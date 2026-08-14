@@ -1,0 +1,8 @@
+{
+  "$schema": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0",
+  "$id": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/configurations/shared/versions/1.0.0",
+  "control-id": "security-101",
+  "name": "Node Access Control",
+  "description": "Each node must declare that access control is enabled.",
+  "access-control-enabled": true
+}

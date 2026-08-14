@@ -1,0 +1,62 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "$id": "https://calmhub.example.com/calm/namespaces/examples/architectures/two-node-secured-service/versions/1.0.0",
+  "unique-id": "two-node-secured-service",
+  "title": "Two Node Secured Service",
+  "description": "A local CALM architecture example with two controlled nodes and one relationship.",
+  "nodes": [
+    {
+      "unique-id": "web-frontend",
+      "node-type": "webclient",
+      "name": "Web Frontend",
+      "description": "User-facing entry point for the example system",
+      "owner": "digital-channels",
+      "controls": {
+        "security": {
+          "description": "Access control applied to the node",
+          "requirements": [
+            {
+              "requirement-url": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0",
+              "config-url": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/configurations/shared/versions/1.0.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "customer-api",
+      "node-type": "service",
+      "name": "Customer API",
+      "description": "Backend API that serves customer profile data",
+      "owner": "customer-platform",
+      "controls": {
+        "security": {
+          "description": "Access control applied to the node",
+          "requirements": [
+            {
+              "requirement-url": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0",
+              "config-url": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/configurations/shared/versions/1.0.0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "web-frontend-to-customer-api",
+      "description": "Fetch customer profile data",
+      "protocol": "HTTP",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "web-frontend"
+          },
+          "destination": {
+            "node": "customer-api"
+          }
+        }
+      }
+    }
+  ]
+}
