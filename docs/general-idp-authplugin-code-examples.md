@@ -1,26 +1,38 @@
-# IdP Auth Plugin Code Examples
+# Direct URL Auth Module Code Examples
 
-This document collects practical examples for:
+This document provides example code aligned to the simplified design in
+[general-idp-authplugin-design.md](/Users/jim/Desktop/finos/calm-web-repo/docs/general-idp-authplugin-design.md).
 
-- `acme-keycloak-idp-client.ts` implementing `IdpClient`
-- `IdpAuthPlugin` wrapping any `IdpClient` into request headers
-- How `IdpAuthPlugin` interacts with the external Acme Keycloak module at runtime
+The examples focus on one core idea: an end-user organization provides a module
+that can supply the authentication information needed for a protected direct URL
+request, and the direct URL loading path adds that information to the outbound
+request before sending it.
 
-## 1) Example: `acme-keycloak-idp-client.ts` (`IdpClient` implementation)
+These examples are illustrative. They show one possible way to structure the
+organization module and the request augmentation step, but they are not meant
+to freeze final package names or exact product APIs.
+
+## 1) Example: organization-provided auth module
+
+This example shows an organization-owned module that returns request headers for
+protected direct URL fetches. Internally it uses a client-credentials token
+request, but that internal logic belongs to the organization module rather than
+the core product requirement.
 
 ```ts
-import type { IdpClient } from "@finos/calm-auth";
+export type DirectUrlAuthContext = {
+  url: string;
+  body?: unknown;
+};
 
-export type AcmeKeycloakIdpClientOptions = {
-  baseUrl: string;                  // e.g. "https://idp.acme.internal"
-  realm: string;                    // e.g. "acme-prod"
-  clientId: string;                 // e.g. "calm-cli"
-  clientSecret?: string;            // optional if using env var
-  clientSecretEnvVar?: string;      // e.g. "CALM_CLIENT_SECRET"
-  scopes?: string[];                // optional OAuth scopes
-  audience?: string;                // optional audience param if used by your Keycloak config
-  tokenPath?: string;               // override token path if needed
-  clockSkewSeconds?: number;        // refresh early, default 60s
+export type AcmeDirectUrlAuthModuleOptions = {
+  baseUrl: string;
+  realm: string;
+  clientId: string;
+  clientSecret?: string;
+  clientSecretEnvVar?: string;
+  audience?: string;
+  scopes?: string[];
 };
 
 type CachedToken = {
@@ -31,54 +43,45 @@ type CachedToken = {
 type TokenResponse = {
   access_token: string;
   expires_in?: number;
-  token_type?: string;
-  scope?: string;
 };
 
-export default class AcmeKeycloakIdpClient implements IdpClient {
+export default class AcmeDirectUrlAuthModule {
   private readonly tokenUrl: string;
   private readonly clientId: string;
   private readonly clientSecret?: string;
-  private readonly scopes: string[];
   private readonly audience?: string;
-  private readonly clockSkewSeconds: number;
+  private readonly scopes: string[];
   private cachedToken?: CachedToken;
 
-  constructor(options: AcmeKeycloakIdpClientOptions) {
+  constructor(options: AcmeDirectUrlAuthModuleOptions) {
     if (!options.baseUrl) throw new Error("baseUrl is required");
     if (!options.realm) throw new Error("realm is required");
     if (!options.clientId) throw new Error("clientId is required");
 
     const baseUrl = options.baseUrl.replace(/\/+$/, "");
-    const tokenPath =
-      options.tokenPath ??
-      `/realms/${encodeURIComponent(options.realm)}/protocol/openid-connect/token`;
-
-    this.tokenUrl = `${baseUrl}${tokenPath}`;
+    this.tokenUrl =
+      `${baseUrl}/realms/${encodeURIComponent(options.realm)}/protocol/openid-connect/token`;
     this.clientId = options.clientId;
     this.clientSecret = this.resolveSecret(options);
-    this.scopes = options.scopes ?? [];
     this.audience = options.audience;
-    this.clockSkewSeconds = options.clockSkewSeconds ?? 60;
+    this.scopes = options.scopes ?? [];
   }
 
-  async getAccessToken(): Promise<string> {
-    if (this.isCachedTokenValid()) {
-      return this.cachedToken!.accessToken;
+  async getAuthHeaders(
+    _context: DirectUrlAuthContext
+  ): Promise<Record<string, string>> {
+    const accessToken = await this.getAccessToken();
+
+    return {
+      Authorization: `Bearer ${accessToken}`,
+    };
+  }
+
+  private async getAccessToken(): Promise<string> {
+    if (this.cachedToken && Date.now() < this.cachedToken.expiresAtEpochMs - 60_000) {
+      return this.cachedToken.accessToken;
     }
 
-    const token = await this.fetchToken();
-    this.cachedToken = token;
-    return token.accessToken;
-  }
-
-  private isCachedTokenValid(): boolean {
-    if (!this.cachedToken) return false;
-    const refreshEarlyMs = this.clockSkewSeconds * 1000;
-    return Date.now() + refreshEarlyMs < this.cachedToken.expiresAtEpochMs;
-  }
-
-  private async fetchToken(): Promise<CachedToken> {
     const body = new URLSearchParams();
     body.set("grant_type", "client_credentials");
     body.set("client_id", this.clientId);
@@ -87,15 +90,15 @@ export default class AcmeKeycloakIdpClient implements IdpClient {
       body.set("client_secret", this.clientSecret);
     }
 
-    if (this.scopes.length > 0) {
-      body.set("scope", this.scopes.join(" "));
-    }
-
     if (this.audience) {
       body.set("audience", this.audience);
     }
 
-    const res = await fetch(this.tokenUrl, {
+    if (this.scopes.length > 0) {
+      body.set("scope", this.scopes.join(" "));
+    }
+
+    const response = await fetch(this.tokenUrl, {
       method: "POST",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
@@ -104,30 +107,34 @@ export default class AcmeKeycloakIdpClient implements IdpClient {
       body,
     });
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
       throw new Error(
-        `Keycloak token request failed: ${res.status} ${res.statusText}${errText ? ` - ${errText}` : ""}`
+        `Token request failed: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`
       );
     }
 
-    const json = (await res.json()) as TokenResponse;
+    const json = (await response.json()) as TokenResponse;
 
     if (!json.access_token) {
       throw new Error("Token response missing access_token");
     }
 
-    const expiresInSec = this.resolveExpiresInSeconds(json);
-    const expiresAtEpochMs = Date.now() + expiresInSec * 1000;
-
-    return {
+    const expiresInMs = (json.expires_in ?? 300) * 1000;
+    this.cachedToken = {
       accessToken: json.access_token,
-      expiresAtEpochMs,
+      expiresAtEpochMs: Date.now() + expiresInMs,
     };
+
+    return this.cachedToken.accessToken;
   }
 
-  private resolveSecret(options: AcmeKeycloakIdpClientOptions): string | undefined {
-    if (options.clientSecret) return options.clientSecret;
+  private resolveSecret(
+    options: AcmeDirectUrlAuthModuleOptions
+  ): string | undefined {
+    if (options.clientSecret) {
+      return options.clientSecret;
+    }
 
     if (options.clientSecretEnvVar) {
       const value = process.env[options.clientSecretEnvVar];
@@ -141,156 +148,142 @@ export default class AcmeKeycloakIdpClient implements IdpClient {
 
     return undefined;
   }
-
-  private resolveExpiresInSeconds(json: TokenResponse): number {
-    if (typeof json.expires_in === "number" && json.expires_in > 0) {
-      return json.expires_in;
-    }
-
-    const exp = this.tryReadJwtExp(json.access_token);
-    if (exp) {
-      const nowSec = Math.floor(Date.now() / 1000);
-      return Math.max(30, exp - nowSec);
-    }
-
-    return 300;
-  }
-
-  private tryReadJwtExp(token: string): number | undefined {
-    try {
-      const parts = token.split(".");
-      if (parts.length < 2) return undefined;
-
-      const payload = JSON.parse(
-        Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")
-      ) as { exp?: number };
-
-      return typeof payload.exp === "number" ? payload.exp : undefined;
-    } catch {
-      return undefined;
-    }
-  }
 }
 ```
 
-## 2) Example: `IdpAuthPlugin`
+## 2) Example: direct URL request augmentation
+
+This example shows the important product-side behavior: the direct URL loading
+path asks the organization module for authentication information and merges the
+returned headers into the outgoing request.
 
 ```ts
-import type { AuthPlugin } from "@finos/calm-shared";
-import type { IdpClient } from "@finos/calm-auth";
-
-export type IdpAuthPluginOptions = {
-  // If omitted, defaults to "Authorization"
-  headerName?: string;
-  // If omitted, defaults to "Bearer"
-  // Ignored when headerName is set to a non-Authorization header
-  headerPrefix?: string;
+export type DirectUrlAuthModule = {
+  getAuthHeaders(
+    context: { url: string; body?: unknown }
+  ): Promise<Record<string, string>>;
 };
 
-export class IdpAuthPlugin implements AuthPlugin {
-  private readonly idpClient: IdpClient;
-  private readonly headerName: string;
-  private readonly headerPrefix: string;
-
-  constructor(idpClient: IdpClient, options: IdpAuthPluginOptions = {}) {
-    this.idpClient = idpClient;
-    this.headerName = options.headerName ?? "Authorization";
-    this.headerPrefix = options.headerPrefix ?? "Bearer";
+export async function applyDirectUrlAuth(
+  request: {
+    url: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+  },
+  authModule?: DirectUrlAuthModule
+) {
+  if (!authModule) {
+    return request;
   }
 
-  async getAuthHeaders(
-    _url?: string,
-    _body?: unknown
-  ): Promise<Record<string, string>> {
-    const token = await this.idpClient.getAccessToken();
+  const authHeaders = await authModule.getAuthHeaders({
+    url: request.url,
+    body: request.body,
+  });
 
-    if (!token) {
-      throw new Error("Idp client returned an empty token");
-    }
-
-    // API key style: { "X-API-Key": "<token>" }
-    if (this.headerName.toLowerCase() !== "authorization") {
-      return { [this.headerName]: token };
-    }
-
-    // OAuth bearer style: { "Authorization": "Bearer <token>" }
-    return { [this.headerName]: `${this.headerPrefix} ${token}` };
-  }
+  return {
+    ...request,
+    headers: {
+      ...(request.headers ?? {}),
+      ...authHeaders,
+    },
+  };
 }
 ```
 
-## 3) Interaction: `IdpAuthPlugin` with `@acme/calm-keycloak-idp`
+## 3) Runtime interaction
 
-`IdpAuthPlugin` does not fetch tokens directly. It delegates token retrieval to the external IdP client module (for example `@acme/calm-keycloak-idp`) through the `IdpClient` interface.
+The runtime interaction is intentionally simple:
 
-### Runtime sequence
-
-1. CLI reads `directUrlAuth` config.
-2. For `type: "custom"`, CLI dynamically imports the module in `directUrlAuth.module`.
-3. CLI constructs `new AcmeKeycloakIdpClient(options)`.
-4. CLI wraps it: `new IdpAuthPlugin(acmeClient)`.
-5. Direct URL loader calls `getAuthHeaders(url, body)`.
-6. `IdpAuthPlugin` calls `acmeClient.getAccessToken()`.
-7. Acme client obtains/caches/refreshes token from Keycloak.
-8. `IdpAuthPlugin` returns request headers (default `Authorization: Bearer <token>`).
+1. The CLI reads configuration for direct URL authentication.
+2. The CLI loads the organization module identified by that configuration.
+3. The direct URL path asks the module for authentication information for the
+   current request.
+4. The returned headers are appended to the outbound request.
+5. The request is sent to the protected URL.
 
 ### Sequence diagram
 
 ```mermaid
 sequenceDiagram
     participant Loader as DirectUrlDocumentLoader
-    participant IAP as IdpAuthPlugin
-    participant ACME as AcmeKeycloakIdpClient
-    participant KC as Keycloak
+    participant ORG as Organization Auth Module
+    participant IDP as Organization Identity Service
 
-    Loader->>IAP: getAuthHeaders(url, body)
-    IAP->>ACME: getAccessToken()
+    Loader->>ORG: getAuthHeaders(url, body)
     alt token cached + valid
-        ACME-->>IAP: cached token
-    else token expired/missing
-        ACME->>KC: POST /token
-        KC-->>ACME: { access_token, expires_in }
-        ACME-->>IAP: fresh token
+        ORG-->>Loader: cached auth headers
+    else token expired or missing
+        ORG->>IDP: request token or auth data
+        IDP-->>ORG: token or auth response
+        ORG-->>Loader: auth headers
     end
-    IAP-->>Loader: { Authorization: "Bearer <token>" }
+    Loader->>Loader: merge auth headers into request
 ```
 
-### Minimal wiring example (dynamic import + wrapper)
+## 4) Minimal wiring example
+
+This example keeps the wiring generic. The configuration points to an
+organization module, the CLI loads it dynamically, and the direct URL path uses
+it as the source of request authentication data.
 
 ```ts
-import { IdpAuthPlugin } from "@finos/calm-auth";
-
-export async function createDirectUrlAuthPlugin(config: {
-  type: "custom";
+export async function createDirectUrlAuthModule(config: {
   module: string;
   options?: Record<string, unknown>;
 }) {
   const mod = await import(config.module);
-  const AcmeClient = mod.default;
+  const OrganizationAuthModule = mod.default;
 
-  if (!AcmeClient) {
-    throw new Error(`Module ${config.module} must export default class`);
+  if (!OrganizationAuthModule) {
+    throw new Error(`Module ${config.module} must export a default class`);
   }
 
-  const idpClient = new AcmeClient(config.options ?? {});
-  return new IdpAuthPlugin(idpClient);
+  const authModule = new OrganizationAuthModule(config.options ?? {});
+
+  if (typeof authModule.getAuthHeaders !== "function") {
+    throw new Error(
+      `Module ${config.module} must provide getAuthHeaders(context)`
+    );
+  }
+
+  return authModule as {
+    getAuthHeaders(context: {
+      url: string;
+      body?: unknown;
+    }): Promise<Record<string, string>>;
+  };
 }
 ```
 
-## 4) Configuration example (`~/.calm.json`)
+## 5) Configuration example
+
+This example shows only the configuration detail needed to locate the
+organization module and pass options into it.
 
 ```json
 {
   "directUrlAuth": {
-    "type": "custom",
-    "module": "@acme/calm-keycloak-idp",
+    "module": "@acme/calm-direct-url-auth",
     "options": {
       "baseUrl": "https://idp.acme.internal",
       "realm": "acme-prod",
       "clientId": "calm-cli",
-      "clientSecretEnvVar": "CALM_CLIENT_SECRET",
-      "scopes": ["openid", "profile"]
+      "clientSecretEnvVar": "CALM_CLIENT_SECRET"
     }
   }
 }
 ```
+
+## 6) Consistency with the simplified design
+
+These examples are consistent with the simplified design document because they
+show only the following required behaviors:
+
+- The organization owns the module that knows how to obtain authentication
+  information.
+- The direct URL path asks that module for request-specific authentication
+  data.
+- The request is augmented before it is sent.
+- Existing CALM Hub authentication is outside the scope of these examples and
+  remains unchanged.
