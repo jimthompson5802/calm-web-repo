@@ -285,33 +285,30 @@ live outside this repository, evolve independently, and carry whatever internal
 logic is needed to gather the authentication information for protected direct
 URLs.
 
+In this model, the end-user organization clones the CALM repository, builds the
+`@finos/calm-auth` package locally from that source, and includes it alongside
+its own in-house module in the same deployment or execution environment.
+
 ```mermaid
 graph TB
-    subgraph FINOS["FINOS (public)"]
-        subgraph AAC["git repo: finos/architecture-as-code"]
-            SHARED["@finos/calm-shared\n(publishes AuthPlugin interface)"]
-            AUTH["@finos/calm-auth\n(publishes IdpClient interface)"]
+    subgraph ORG["Organisation (private)"]
+        subgraph CALM_SRC["git repo: acme/architecture-as-code\n(cloned from FINOS CALM repo)"]
+            SHARED["@finos/calm-shared"]
+            AUTH["@finos/calm-auth\n(built locally)"]
             CLI["@finos/calm-cli"]
         end
-        NPM_PUB["npm registry (public)\nnpmjs.com"]
-        SHARED -- "npm publish" --> NPM_PUB
-        AUTH -- "npm publish" --> NPM_PUB
-    end
 
-    subgraph ORG["Organisation (private)"]
-        subgraph ORG_REPO["git repo: acme/calm-inhouse-idp\n(separate repo, no fork of architecture-as-code)"]
+        subgraph INHOUSE["git repo: Local org integration"]
             ORG_SRC["src/acme-inhouse-idp-client.ts\nimplements IdpClient"]
         end
-        ORG_REG["npm registry (private)\ne.g. Artifactory / GitHub Packages"]
-        ORG_REPO -- "npm publish" --> ORG_REG
+
+        AUTH -- "local package build" --> ORG_SRC
+        AUTH -- "dependency" --> CLI
+        ORG_SRC -- "npm install / local workspace link" --> CLI
     end
 
-    NPM_PUB -- "npm install @finos/calm-auth" --> ORG_SRC
-    ORG_REG -- "npm install @acme/calm-inhouse-idp" --> CLI
-
-    style AAC fill:#e8f4e8,stroke:#2d7a2d
-    style ORG_REPO fill:#e8f0fb,stroke:#3a6bc4
-    style FINOS fill:#f0faf0,stroke:#2d7a2d
+    style CALM_SRC fill:#e8f4e8,stroke:#2d7a2d
+    style INHOUSE fill:#e8f0fb,stroke:#3a6bc4
     style ORG fill:#f0f4ff,stroke:#3a6bc4
 ```
 
