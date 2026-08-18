@@ -356,64 +356,40 @@ existing CALM Hub path.
 
 ### Configuration Reference
 
-Configuration still needs a way to tell the CLI how to locate or activate the
-organization module for direct URL authentication. The earlier draft used
-`directUrlAuth` as the working example, and the retained diagrams continue to
-show that name, but the key requirement is conceptual rather than syntactic:
-there must be enough configuration to connect the direct URL path to the
-organization-provided authentication module.
+The example below is illustrative only. It is not prescriptive of the final
+configuration design, naming, or protocol choices; it exists to show one
+possible way the direct URL auth hook could be expressed in a real config file.
 
-The document deliberately does not require a final union shape, a fixed set of
-built-in flow types, or a detailed environment-variable matrix. Those are
-implementation choices. The requirement is simply that protected direct URL
-requests can be augmented with authentication data supplied by the organization
-module, while current CALM Hub configuration continues to work unchanged.
+An illustrative example of the configuration shape looks like this, showing
+how the CLI can be told where the end-user organization module is located so
+it can provide authentication information for the direct URL loader:
 
----
-
-## Implementation Plan
-
-The retained plan diagram still usefully shows the main surfaces that change:
-module resolution, direct URL request wiring, and validation. For this revised
-document, read it as an illustration of impacted areas rather than as a locked,
-phase-by-phase delivery commitment.
-
-```mermaid
-gantt
-    dateFormat  YYYY-MM-DD
-    axisFormat  Phase %s
-
-    section Phase 1 · calm-auth package
-    Scaffold package (package.json, tsconfig, vitest)     :p1a, 2025-01-01, 1d
-    IdpClient interface                                    :p1b, after p1a, 1d
-    StaticTokenIdpClient + tests                          :p1c, after p1b, 1d
-    ApiKeyIdpClient + tests                               :p1d, after p1b, 1d
-    ClientCredentialsIdpClient + tests                    :p1e, after p1b, 2d
-    PkceIdpClient + tests                                 :p1f, after p1b, 3d
-    IdpAuthPlugin + tests                                 :p1g, after p1c, 1d
-    Barrel export (index.ts)                              :p1h, after p1g, 1d
-
-    section Phase 2 · DirectUrlDocumentLoader auth
-    Add authPlugin param + interceptor                    :p2a, 2025-01-01, 1d
-    Update DirectUrlDocumentLoader tests                  :p2b, after p2a, 1d
-
-    section Phase 3 · CLI structured config
-    Extend CLIConfig with directUrlAuth union             :p3a, after p1h, 1d
-    createDirectUrlAuthPlugin factory + tests             :p3b, after p3a, 2d
-    Add directUrlAuthPlugin to DocumentLoaderOptions      :p3c, after p3b p2b, 1d
-    mergeWithEnvVars env-var overrides                    :p3d, after p3c, 1d
-
-    section Phase 4 · Validation
-    Integration test: static-token + direct URL           :p4a, after p3d, 1d
-    Integration test: client-credentials + direct URL     :p4b, after p3d, 1d
-    Integration test: custom external module              :p4c, after p3d, 1d
+```json
+{
+  "authPluginPath": "~/plugins/calm-hub-auth.js",
+  "directUrlAuth": {
+    "module": "~/plugins/acme-direct-url-auth.js",
+    "options": {
+      "tokenUrl": "https://idp.acme.example.com/oauth/token",
+      "clientId": "calm-direct-url",
+      "clientSecret": "${ACME_IDP_CLIENT_SECRET}",
+      "scopes": ["calm:read", "calm:documents"],
+      "headerName": "Authorization",
+      "headerPrefix": "Bearer "
+    }
+  }
+}
 ```
 
-The high-level implementation changes captured by this simplified document are:
-the direct URL loading path gains an organization-module integration point, the
-module provides authentication data needed for the request, the loader appends
-that data before sending the request, and compatibility with the existing CALM
-Hub authentication path is preserved.
+This example is intentionally illustrative: the direct URL path resolves a
+module located by the organization for protected fetches, while the existing
+`authPluginPath` setting remains available for the unchanged CALM Hub behavior.
+The actual config shape and naming can vary by implementation, but the required
+behavior is the same: the CLI resolves the direct URL auth module, the loader
+calls it for the request being made, and the returned headers are added before
+the fetch is sent.
+
+---
 
 ## Constraints and Notes
 
