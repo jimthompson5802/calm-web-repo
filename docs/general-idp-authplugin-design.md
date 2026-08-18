@@ -94,7 +94,7 @@ graph LR
     CLI["@finos/calm-cli"]
     AUTH["@finos/calm-auth\n(new)"]
     SHARED["@finos/calm-shared"]
-    EXTORG["@acme/calm-keycloak-idp\n(external org package)"]
+    EXTORG["@acme/calm-inhouse-idp\n(external org package)"]
 
     CLI --> AUTH
     CLI --> SHARED
@@ -106,10 +106,8 @@ graph LR
 
 At the interface level, the only requirement that matters is that the
 organization module can provide what the direct URL request needs in order to
-authenticate. The specific class names in the diagram are examples from the
-earlier draft. The retained design intent is that organization-specific logic
-is isolated behind a small contract and the loader consumes the resulting
-request augmentation data.
+authenticate. The specific class names in the diagram are illustrative examples. The design intent is for an organization to implement their specific logic
+in a module separate from the CALM project using an minimal interface specification defined by the CALM project and the direct URL loader consumes the end user organization information to facilitate authentication.
 
 ```mermaid
 classDiagram
@@ -161,7 +159,7 @@ classDiagram
     }
 
     namespace external_org {
-        class AcmeKeycloakIdpClient {
+        class AcmeInhouseIdpClient {
             +getAccessToken() Promise~string~
         }
     }
@@ -172,7 +170,7 @@ classDiagram
     IdpClient <|.. ApiKeyIdpClient
     IdpClient <|.. ClientCredentialsIdpClient
     IdpClient <|.. PkceIdpClient
-    IdpClient <|.. AcmeKeycloakIdpClient
+    IdpClient <|.. AcmeInhouseIdpClient
     IdpAuthPlugin --> IdpClient
 ```
 
@@ -336,15 +334,15 @@ graph TB
     end
 
     subgraph ORG["Organisation (private)"]
-        subgraph ORG_REPO["git repo: acme/calm-keycloak-idp\n(separate repo, no fork of architecture-as-code)"]
-            ORG_SRC["src/acme-keycloak-idp-client.ts\nimplements IdpClient"]
+        subgraph ORG_REPO["git repo: acme/calm-inhouse-idp\n(separate repo, no fork of architecture-as-code)"]
+            ORG_SRC["src/acme-inhouse-idp-client.ts\nimplements IdpClient"]
         end
         ORG_REG["npm registry (private)\ne.g. Artifactory / GitHub Packages"]
         ORG_REPO -- "npm publish" --> ORG_REG
     end
 
     NPM_PUB -- "npm install @finos/calm-auth" --> ORG_SRC
-    ORG_REG -- "npm install @acme/calm-keycloak-idp" --> CLI
+    ORG_REG -- "npm install @acme/calm-inhouse-idp" --> CLI
 
     style AAC fill:#e8f4e8,stroke:#2d7a2d
     style ORG_REPO fill:#e8f0fb,stroke:#3a6bc4
@@ -362,17 +360,17 @@ sequenceDiagram
     participant CLI as calm-cli
     participant Factory as createAuthPluginFromConfig
     participant Dyn as dynamic import()
-    participant Ext as @acme/calm-keycloak-idp
+    participant Ext as @acme/calm-inhouse-idp
     participant IAP as IdpAuthPlugin
     participant Loader as DirectUrlDocumentLoader
 
     User->>CLI: calm validate --architecture arch.json
     CLI->>Factory: createDirectUrlAuthPlugin(config.directUrlAuth)
-    Factory->>Dyn: import("@acme/calm-keycloak-idp")
+    Factory->>Dyn: import("@acme/calm-inhouse-idp")
     Dyn->>Ext: load module
-    Ext-->>Dyn: class AcmeKeycloakIdpClient
-    Dyn-->>Factory: AcmeKeycloakIdpClient
-    Factory->>Ext: new AcmeKeycloakIdpClient(options)
+    Ext-->>Dyn: class AcmeInhouseIdpClient
+    Dyn-->>Factory: AcmeInhouseIdpClient
+    Factory->>Ext: new AcmeInhouseIdpClient(options)
     Factory->>IAP: new IdpAuthPlugin(acmeClient)
     Factory-->>CLI: authPlugin
     CLI->>Loader: loadMissingDocument(url)
