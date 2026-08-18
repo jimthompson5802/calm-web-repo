@@ -1,4 +1,4 @@
-# Generalised IDP Auth Plugin Design
+# IDP Auth Plugin Design for DirectUrlDocumentLoader
 
 ## Overview
 
@@ -13,8 +13,7 @@ information to the outbound request before the fetch is sent.
 The existing CALM Hub authentication path remains unchanged. This work only
 adds a direct URL integration point for organization-specific authentication.
 
-The Mermaid diagrams in this document are retained from the earlier draft.
-Where they show concrete package names, protocol examples, or config names,
+The Mermaid diagrams show concrete package names, protocol examples, or config names,
 read those as illustrative examples of where the change applies rather than as
 final required implementation detail.
 
@@ -148,10 +147,9 @@ classDiagram
 
 ### Example Authentication Flows
 
-The next two diagrams are retained as examples of how an organization module
+The next two diagrams are examples of how an organization module
 might obtain authentication information before the request is augmented. They
-should not be read as a commitment to ship all of these flows as built-in
-product features. The requirement is only that the system can work with an
+should not be read as a definitive way to implement these flows. The requirement is only that the system can work with an
 organization module that knows how to obtain the needed authentication data.
 
 #### Client Credentials (OAuth2 RFC 6749 §4.4)
