@@ -280,8 +280,8 @@ the existing CALM Hub wiring continues to behave exactly as it does today.
 ### External Organisation IDP Support
 
 The organization module is expected to be owned by the end-user organization
-when the authentication requirements are organization-specific. That module can
-live outside this repository, evolve independently, and carry whatever internal
+when the authentication requirements are organization-specific. That module 
+lives outside the CALM project repository, evolve independently, and carry whatever internal
 logic is needed to gather the authentication information for protected direct
 URLs.
 
@@ -300,11 +300,13 @@ graph TB
 
         subgraph INHOUSE["git repo: Local org integration"]
             ORG_SRC["src/acme-inhouse-idp-client.ts\nimplements IdpClient"]
+            ORG_AUTH["built acme-inhouse-idp-client"]
         end
 
         AUTH -- "local package build" --> ORG_SRC
         AUTH -- "dependency" --> CLI
-        ORG_SRC -- "npm install / local workspace link" --> CLI
+        ORG_SRC -- "npm install / local workspace link" --> ORG_AUTH
+        ORG_AUTH -- "via configuration directUrlAuth.module integrate with" --> CLI
     end
 
     style CALM_SRC fill:#e8f4e8,stroke:#2d7a2d
