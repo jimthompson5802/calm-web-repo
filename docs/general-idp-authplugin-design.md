@@ -257,17 +257,12 @@ flowchart TD
     LOAD --> DIRECT["─── Direct URL (new) ───"]
     DIRECT --> HASDU{directUrlAuth.type set?}
     HASDU -- no --> NOAUTH_DU["no auth\n(unauthenticated, current behaviour)"]
-    HASDU -- static-token --> ST["StaticTokenIdpClient\n(token or envVar)"]
-    HASDU -- api-key --> AK["ApiKeyIdpClient\n+ headerName option"]
-    HASDU -- client-credentials --> CC["ClientCredentialsIdpClient\n(tokenUrl, clientId, secret)"]
-    HASDU -- pkce --> PKCE["PkceIdpClient\n(authorizationUrl, tokenUrl,\nclientId, redirectPort)"]
     HASDU -- custom --> DYNMOD["dynamic import(directUrlAuth.module)\nexternal IdpClient\n(npm package or file path)"]
-    ST & AK & CC & PKCE & DYNMOD --> WRAP["wrap in IdpAuthPlugin"]
+    DYNMOD --> WRAP["wrap in IdpAuthPlugin"]
     WRAP & NOAUTH_DU --> DU_DONE["directUrlAuthPlugin\n→ DirectUrlDocumentLoader"]
 ```
 
-Even if implementation names change, the substantive change remains the same:
-the direct URL path gains a dedicated resolution step for organization-provided
+The direct URL path gains a dedicated resolution step for organization-provided
 authentication data, while the CALM Hub path is left untouched.
 
 ---
