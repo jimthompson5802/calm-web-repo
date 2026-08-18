@@ -132,30 +132,6 @@ classDiagram
             -headerPrefix string?
             +getAuthHeaders(url, body) Promise~Record~
         }
-        class StaticTokenIdpClient {
-            -token string
-            +getAccessToken() Promise~string~
-        }
-        class ApiKeyIdpClient {
-            -apiKey string
-            +getAccessToken() Promise~string~
-        }
-        class ClientCredentialsIdpClient {
-            -tokenUrl string
-            -clientId string
-            -clientSecret string
-            -scopes string[]
-            -cachedToken CachedToken?
-            +getAccessToken() Promise~string~
-        }
-        class PkceIdpClient {
-            -authorizationUrl string
-            -tokenUrl string
-            -clientId string
-            -redirectPort number
-            -cachedToken CachedToken?
-            +getAccessToken() Promise~string~
-        }
     }
 
     namespace external_org {
@@ -166,10 +142,6 @@ classDiagram
 
     AuthPlugin <|.. NoAuthPlugin
     AuthPlugin <|.. IdpAuthPlugin
-    IdpClient <|.. StaticTokenIdpClient
-    IdpClient <|.. ApiKeyIdpClient
-    IdpClient <|.. ClientCredentialsIdpClient
-    IdpClient <|.. PkceIdpClient
     IdpClient <|.. AcmeInhouseIdpClient
     IdpAuthPlugin --> IdpClient
 ```
@@ -188,7 +160,7 @@ organization module that knows how to obtain the needed authentication data.
 sequenceDiagram
     participant Loader as Document Loader
     participant IAP as IdpAuthPlugin
-    participant CC as ClientCredentialsIdpClient
+    participant CC as AcmeInhouseIdpClient
     participant IDP as Token Endpoint
 
     Loader->>IAP: getAuthHeaders(url, body)
@@ -210,7 +182,7 @@ sequenceDiagram
 sequenceDiagram
     participant Loader as Document Loader
     participant IAP as IdpAuthPlugin
-    participant PC as PkceIdpClient
+    participant PC as AcmeInhouseIdpClient
     participant Browser as System Browser
     participant LS as Local Redirect Server (localhost)
     participant IDP as Authorization Server
