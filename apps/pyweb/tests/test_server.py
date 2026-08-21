@@ -15,6 +15,7 @@ from pyweb.server import (
     SIMPLE_AUTH_VALUE,
     create_server,
     parse_args,
+    print_startup_messages,
 )
 
 
@@ -179,3 +180,20 @@ def test_parse_args_allows_overrides() -> None:
     assert config.host == "0.0.0.0"
     assert config.port == 9090
     assert config.simple_auth is True
+
+
+def test_print_startup_messages_without_simple_auth(capsys: object) -> None:
+    print_startup_messages(ServerConfig())
+
+    captured = capsys.readouterr()
+    assert "Serving" in captured.out
+    assert "Simple authentication enabled" not in captured.out
+
+
+def test_print_startup_messages_with_simple_auth(capsys: object) -> None:
+    print_startup_messages(ServerConfig(simple_auth=True))
+
+    captured = capsys.readouterr()
+    assert "Serving" in captured.out
+    assert "Simple authentication enabled" in captured.out
+    assert f"{SIMPLE_AUTH_HEADER}: {SIMPLE_AUTH_VALUE}" in captured.out

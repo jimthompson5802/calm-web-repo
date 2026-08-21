@@ -122,6 +122,15 @@ def create_server(config: ServerConfig) -> ThreadingHTTPServer:
     return ThreadingHTTPServer((config.host, config.port), handler_class)
 
 
+def print_startup_messages(config: ServerConfig) -> None:
+    print(f"Serving {config.static_root} at http://{config.host}:{config.port}")
+    if config.simple_auth:
+        print(
+            "Simple authentication enabled; static GET and HEAD requests require "
+            f"{SIMPLE_AUTH_HEADER}: {SIMPLE_AUTH_VALUE}"
+        )
+
+
 def parse_args(argv: Sequence[str] | None = None) -> ServerConfig:
     parser = argparse.ArgumentParser(
         description="Serve files from calm-web-repo/static using Python's standard library."
@@ -146,7 +155,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = parse_args(argv)
     server = create_server(config)
 
-    print(f"Serving {config.static_root} at http://{config.host}:{config.port}")
+    print_startup_messages(config)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

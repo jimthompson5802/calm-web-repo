@@ -26,6 +26,7 @@ uv run --project apps/pyweb ruff check .             # Run lint checks
   - `/patterns/company-base-pattern.json`
   - `/controls/security/schemas/tls-encryption.json`
 - Supports optional `--simple-auth`, which requires `Authorization: XYZ` for static file `GET` and `HEAD` requests
+- Prints a startup confirmation to stdout when `--simple-auth` is enabled
 - Rejects path traversal attempts
 - Returns `404` for missing files and directories
 - Exposes `GET /health` with `{"status":"ok"}`
@@ -45,6 +46,12 @@ With simple auth enabled:
 curl -H 'Authorization: XYZ' http://127.0.0.1:8081/architectures/calm-1.json
 curl -I -H 'Authorization: XYZ' http://127.0.0.1:8081/architectures/calm-1.json
 curl http://127.0.0.1:8081/health
+```
+
+Expected startup confirmation when `--simple-auth` is enabled:
+
+```text
+Simple authentication enabled; static GET and HEAD requests require Authorization: XYZ
 ```
 
 Expected auth failure when `--simple-auth` is enabled:
