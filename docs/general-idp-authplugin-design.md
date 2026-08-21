@@ -1,44 +1,31 @@
-# Generalised IDP Auth Plugin Design
-
-Github Copilot using Claude Haiku 4.5 and Claude Sonnet 4.6 assisted in developing the design described in this document.
+# IDP Auth Plugin Design for DirectUrlDocumentLoader
 
 ## Overview
 
-This document describes a design to add authentication support to the `DirectUrlDocumentLoader`
-in the `architecture-as-code` repo, with a pluggable IDP abstraction that allows organisations
-to bring their own Identity Provider without modifying this repository.
+This document simplifies the requirement for adding authentication support to
+`DirectUrlDocumentLoader`.
 
-**The existing CALM Hub authentication mechanism (`authPluginPath` / `AuthPlugin`) is left
-completely unchanged.** The new IDP abstraction applies exclusively to the `DirectUrlDocumentLoader`
-and is configured through a separate `directUrlAuth` block in `~/.calm.json`. Both loaders can
-therefore operate under different credentials simultaneously.
+The main requirement is straightforward: an end-user organization must be able
+to provide a module that returns the authentication information needed for a
+protected direct-URL request, and the direct URL loading path must add that
+information to the outbound request before the fetch is sent.
 
-### Supported Industry Standards
+The existing CALM Hub authentication path remains unchanged. This work only
+adds a direct URL integration point for organization-specific authentication.
 
-The design is intentionally IDP-agnostic. Any Identity Provider that implements one of the
-following industry-standard protocols is supported without modification to this repository:
-
-| Standard | RFC / Spec | Built-in type | Example IDPs |
-|---|---|---|---|
-| OAuth 2.0 Client Credentials | RFC 6749 §4.4 | `client-credentials` | PingFederate, PingOne, Keycloak, Okta, Azure AD, ForgeRock AM, Auth0 |
-| OAuth 2.0 Authorization Code + PKCE | RFC 7636 + RFC 6749 §4.1 | `pkce` | PingFederate, PingOne, Keycloak, Okta, Azure AD, ForgeRock AM, Auth0 |
-| Bearer Token (static) | RFC 6750 | `static-token` | Any IDP that issues long-lived tokens or PATs (GitHub, GitLab, Bitbucket) |
-| API Key | — (de facto standard) | `api-key` | AWS API Gateway, Kong, Apigee, custom gateways |
-| Proprietary / non-standard flows | org-defined | `custom` (external package) | Any IDP with a vendor SDK — PingFederate SAML adapters, Symantec SiteMinder, CA SSO, bespoke corporate SSO |
-
-For IDPs that implement OAuth 2.0 Client Credentials or PKCE, the built-in `ClientCredentialsIdpClient`
-or `PkceIdpClient` can be used directly via configuration — **no custom code is required**. The
-`custom` type exists for IDPs with proprietary SDKs, non-standard grant types, or additional
-org-specific logic (e.g., certificate pinning, custom claim validation, SAML-based flows).
+The Mermaid diagrams show concrete package names, protocol examples, or config names,
+read those as illustrative examples of where the change applies rather than as
+final required implementation detail.
 
 ---
 
 ## Current State
 
-Authentication support exists only for the CALM Hub loader. The `DirectUrlDocumentLoader` makes
-unauthenticated HTTP requests, meaning any document served behind an IDP-protected URL cannot be
-fetched. The only extension point is `authPluginPath` in `~/.calm.json`, which dynamically loads
-a user-supplied `.js` file that implements the `AuthPlugin` interface in full.
+Today, authentication support exists only for the CALM Hub path. The direct URL
+path sends unauthenticated HTTP requests, so documents behind organization
+identity controls cannot be loaded. The practical gap is not the lack of a
+specific OAuth flow; it is the lack of a place for an organization module to
+supply the authentication information required by its own environment.
 
 ```mermaid
 graph TD
@@ -72,39 +59,41 @@ graph TD
     AP -.-> CHDL
 ```
 
-**Gaps in the current design:**
+The change implied by this gap is simple:
 
-1. `DirectUrlDocumentLoader` receives no `AuthPlugin` — documents at auth-protected `https://`
-   URLs cannot be fetched.
-2. There is no structured configuration for common IDP flows (OAuth2, static token, API key)
-   for direct URL access; the only extension point (`authPluginPath`) is scoped to CALM Hub
-   and requires writing a full `AuthPlugin` implementation in JavaScript.
-3. Organisations cannot configure independent credentials for CALM Hub vs. direct URL sources.
+1. The direct URL path needs its own authentication integration point.
+2. That integration point must accept organization-supplied authentication
+   information for the request being made.
+3. Existing CALM Hub authentication behavior stays as-is.
 
 ---
 
 ## Proposed Design
 
-The design introduces two things:
+The revised design centers on one idea: the product must accept an
+organization-provided module for direct URL authentication, ask it for the
+authentication information needed for the target request, and append that
+information before the request is sent.
 
-1. **A new `@finos/calm-auth` package** containing an `IdpClient` interface and built-in
-   implementations for common IDP flows. An `IdpAuthPlugin` bridge adapts any `IdpClient` into
-   the existing `AuthPlugin` interface.
-2. **Auth wired into `DirectUrlDocumentLoader`** via its own separate `directUrlAuthPlugin`
-   field in `DocumentLoaderOptions`, using the same axios interceptor pattern already used by
-   `CalmHubDocumentLoader` — but fed from a completely independent configuration path.
-
-The `authPlugin` field in `DocumentLoaderOptions` (used by `CalmHubDocumentLoader`) and the
-existing `authPluginPath` / `loadAuthPlugin` code path in the CLI are **not modified**.
+This means the implementation changes are focused in a few high-level areas:
+the CLI or configuration path must resolve the organization module, the direct
+URL loader path must call it, and the outbound request must be augmented with
+the returned authentication data. The document does not need to require a
+particular set of built-in flows to achieve that.
 
 ### Package Dependency Graph
+
+The dependency diagram below still shows one possible structural shape. For the
+purposes of this requirement, the important point is simply that organization
+authentication logic can live outside this repository and be consumed by the
+direct URL path.
 
 ```mermaid
 graph LR
     CLI["@finos/calm-cli"]
     AUTH["@finos/calm-auth\n(new)"]
     SHARED["@finos/calm-shared"]
-    EXTORG["@acme/calm-keycloak-idp\n(external org package)"]
+    EXTORG["@acme/calm-inhouse-idp\n(external org package)"]
 
     CLI --> AUTH
     CLI --> SHARED
@@ -112,18 +101,12 @@ graph LR
     EXTORG --> AUTH
 ```
 
-`AuthPlugin` stays in `@finos/calm-shared` so all existing consumers are unaffected. `@finos/calm-auth`
-depends on `@finos/calm-shared` for that interface. External org packages depend only on
-`@finos/calm-auth` for the `IdpClient` contract.
-
-> **IDP vendor note:** Keycloak is used as the illustrative example throughout this document.
-> Any IDP listed in the Supported Industry Standards table above (PingFederate, PingOne, Okta,
-> Azure AD, ForgeRock, Auth0, etc.) is equally supported. The `@acme/calm-keycloak-idp` package
-> name in diagrams is a placeholder — substitute the org's actual IDP vendor name.
-
----
-
 ### Interface Layer
+
+At the interface level, the only requirement that matters is that the
+organization module can provide what the direct URL request needs in order to
+authenticate. The specific class names in the diagram are illustrative examples. The design intent is for an organization to implement their specific logic
+in a module separate from the CALM project using an minimal interface specification defined by the CALM project and the direct URL loader consumes the end user organization information to facilitate authentication.
 
 ```mermaid
 classDiagram
@@ -148,55 +131,26 @@ classDiagram
             -headerPrefix string?
             +getAuthHeaders(url, body) Promise~Record~
         }
-        class StaticTokenIdpClient {
-            -token string
-            +getAccessToken() Promise~string~
-        }
-        class ApiKeyIdpClient {
-            -apiKey string
-            +getAccessToken() Promise~string~
-        }
-        class ClientCredentialsIdpClient {
-            -tokenUrl string
-            -clientId string
-            -clientSecret string
-            -scopes string[]
-            -cachedToken CachedToken?
-            +getAccessToken() Promise~string~
-        }
-        class PkceIdpClient {
-            -authorizationUrl string
-            -tokenUrl string
-            -clientId string
-            -redirectPort number
-            -cachedToken CachedToken?
-            +getAccessToken() Promise~string~
-        }
     }
 
     namespace external_org {
-        class AcmeKeycloakIdpClient {
+        class AcmeInhouseIdpClient {
             +getAccessToken() Promise~string~
         }
     }
 
     AuthPlugin <|.. NoAuthPlugin
     AuthPlugin <|.. IdpAuthPlugin
-    IdpClient <|.. StaticTokenIdpClient
-    IdpClient <|.. ApiKeyIdpClient
-    IdpClient <|.. ClientCredentialsIdpClient
-    IdpClient <|.. PkceIdpClient
-    IdpClient <|.. AcmeKeycloakIdpClient
+    IdpClient <|.. AcmeInhouseIdpClient
     IdpAuthPlugin --> IdpClient
 ```
 
-The `IdpAuthPlugin` is the sole bridge between the token world (`IdpClient`) and the header world
-(`AuthPlugin`). Its constructor accepts an optional `headerName` (for API keys) and `headerPrefix`
-(e.g., `"Bearer"` or `"Token"`). By default it emits `Authorization: Bearer <token>`.
+### Example Authentication Flows
 
----
-
-### Token Acquisition Flows
+The next two diagrams are examples of how an organization module
+might obtain authentication information before the request is augmented. They
+should not be read as a definitive way to implement these flows. The requirement is only that the system can work with an
+organization module that knows how to obtain the needed authentication data.
 
 #### Client Credentials (OAuth2 RFC 6749 §4.4)
 
@@ -204,7 +158,7 @@ The `IdpAuthPlugin` is the sole bridge between the token world (`IdpClient`) and
 sequenceDiagram
     participant Loader as Document Loader
     participant IAP as IdpAuthPlugin
-    participant CC as ClientCredentialsIdpClient
+    participant CC as AcmeInhouseIdpClient
     participant IDP as Token Endpoint
 
     Loader->>IAP: getAuthHeaders(url, body)
@@ -226,7 +180,7 @@ sequenceDiagram
 sequenceDiagram
     participant Loader as Document Loader
     participant IAP as IdpAuthPlugin
-    participant PC as PkceIdpClient
+    participant PC as AcmeInhouseIdpClient
     participant Browser as System Browser
     participant LS as Local Redirect Server (localhost)
     participant IDP as Authorization Server
@@ -251,16 +205,14 @@ sequenceDiagram
     IAP-->>Loader: { Authorization: "Bearer <token>" }
 ```
 
-> **Note:** PKCE requires an interactive browser session and blocks in headless CI environments.
-> Use `static-token` or `client-credentials` for non-interactive pipelines.
-
 ---
 
 ### Auth Resolution in the CLI
 
-The two loaders are resolved independently and in parallel inside `parseDocumentLoaderConfig`.
-The CALM Hub path is untouched; a new factory function `createDirectUrlAuthPlugin` handles
-the `DirectUrlDocumentLoader` path.
+The CLI needs to keep the two authentication paths distinct. CALM Hub continues
+to resolve authentication exactly as it does today. The new behavior is that
+the direct URL path resolves an organization module and prepares it for request
+augmentation on protected direct-URL fetches.
 
 ```mermaid
 flowchart TD
@@ -275,18 +227,22 @@ flowchart TD
     LOAD --> DIRECT["─── Direct URL (new) ───"]
     DIRECT --> HASDU{directUrlAuth.type set?}
     HASDU -- no --> NOAUTH_DU["no auth\n(unauthenticated, current behaviour)"]
-    HASDU -- static-token --> ST["StaticTokenIdpClient\n(token or envVar)"]
-    HASDU -- api-key --> AK["ApiKeyIdpClient\n+ headerName option"]
-    HASDU -- client-credentials --> CC["ClientCredentialsIdpClient\n(tokenUrl, clientId, secret)"]
-    HASDU -- pkce --> PKCE["PkceIdpClient\n(authorizationUrl, tokenUrl,\nclientId, redirectPort)"]
     HASDU -- custom --> DYNMOD["dynamic import(directUrlAuth.module)\nexternal IdpClient\n(npm package or file path)"]
-    ST & AK & CC & PKCE & DYNMOD --> WRAP["wrap in IdpAuthPlugin"]
+    DYNMOD --> WRAP["wrap in IdpAuthPlugin"]
     WRAP & NOAUTH_DU --> DU_DONE["directUrlAuthPlugin\n→ DirectUrlDocumentLoader"]
 ```
+
+The direct URL path gains a dedicated resolution step for organization-provided
+authentication data, while the CALM Hub path is left untouched.
 
 ---
 
 ### Document Loader Chain (After Change)
+
+In the loader chain, the change is that direct URL loading receives
+authentication input from the organization module and applies that input to the
+request. This is where the request augmentation actually affects document
+retrieval behavior.
 
 ```mermaid
 graph TD
@@ -314,81 +270,53 @@ graph TD
     BDL --> WDL --> MDL --> CHDL --> FSDL --> DUDL
 ```
 
-The two plugins travel through `DocumentLoaderOptions` under separate named fields and are
-delivered only to the loader that owns them. A user can configure a corporate SSO for CALM Hub
-via the existing `.js` plugin and a GitHub PAT for raw GitHub URLs via `directUrlAuth` — these
-are fully independent.
+What changes will be made at this layer is now clear:
+the direct URL loader gains a way to receive organization-provided
+authentication information, it adds that information to outbound requests, and
+the existing CALM Hub wiring continues to behave exactly as it does today.
 
 ---
 
 ### External Organisation IDP Support
 
-An organisation with a proprietary IDP (e.g., a bespoke Keycloak realm, a corporate SSO) can
-implement and distribute their own IDP package **entirely outside the `architecture-as-code`
-repository**. The org package lives in its own separate git repository, is built and published
-independently, and has no structural or source-level dependency on the `architecture-as-code`
-repo. The only coupling is to the published `@finos/calm-auth` npm package, which supplies the
-`IdpClient` interface.
+The organization module is expected to be owned by the end-user organization
+when the authentication requirements are organization-specific. That module 
+lives outside the CALM project repository, evolve independently, and carry whatever internal
+logic is needed to gather the authentication information for protected direct
+URLs.
+
+In this model, the end-user organization clones the CALM repository, builds the
+`@finos/calm-auth` package locally from that source, and includes it alongside
+its own in-house module in the same deployment or execution environment.
 
 ```mermaid
 graph TB
-    subgraph FINOS["FINOS (public)"]
-        subgraph AAC["git repo: finos/architecture-as-code"]
-            SHARED["@finos/calm-shared\n(publishes AuthPlugin interface)"]
-            AUTH["@finos/calm-auth\n(publishes IdpClient interface)"]
+    subgraph ORG["Organisation (private)"]
+        subgraph CALM_SRC["git repo: acme/architecture-as-code\n(cloned from FINOS CALM repo)"]
+            SHARED["@finos/calm-shared"]
+            AUTH["@finos/calm-auth\n(built locally)"]
             CLI["@finos/calm-cli"]
         end
-        NPM_PUB["npm registry (public)\nnpmjs.com"]
-        SHARED -- "npm publish" --> NPM_PUB
-        AUTH -- "npm publish" --> NPM_PUB
-    end
 
-    subgraph ORG["Organisation (private)"]
-        subgraph ORG_REPO["git repo: acme/calm-keycloak-idp\n(separate repo, no fork of architecture-as-code)"]
-            ORG_SRC["src/acme-keycloak-idp-client.ts\nimplements IdpClient"]
+        subgraph INHOUSE["git repo: Local org integration"]
+            ORG_SRC["src/acme-inhouse-idp-client.ts\nimplements IdpClient"]
+            ORG_AUTH["built acme-inhouse-idp-client"]
         end
-        ORG_REG["npm registry (private)\ne.g. Artifactory / GitHub Packages"]
-        ORG_REPO -- "npm publish" --> ORG_REG
+
+        AUTH -- "local package build" --> ORG_SRC
+        AUTH -- "dependency" --> CLI
+        ORG_SRC -- "npm install / local workspace link" --> ORG_AUTH
+        ORG_AUTH -- "via configuration directUrlAuth.module integrate with" --> CLI
     end
 
-    NPM_PUB -- "npm install @finos/calm-auth" --> ORG_SRC
-    ORG_REG -- "npm install @acme/calm-keycloak-idp" --> CLI
-
-    style AAC fill:#e8f4e8,stroke:#2d7a2d
-    style ORG_REPO fill:#e8f0fb,stroke:#3a6bc4
-    style FINOS fill:#f0faf0,stroke:#2d7a2d
+    style CALM_SRC fill:#e8f4e8,stroke:#2d7a2d
+    style INHOUSE fill:#e8f0fb,stroke:#3a6bc4
     style ORG fill:#f0f4ff,stroke:#3a6bc4
 ```
 
-Steps for the org:
-
-1. Create a new git repository (e.g., `acme/calm-keycloak-idp`) separate from `architecture-as-code`.
-2. Add `@finos/calm-auth` as a dependency — this is a published npm package, so no access to
-   the `architecture-as-code` source repo is needed.
-3. Implement and `export default` a class that satisfies `IdpClient`.
-4. Publish the package (e.g., `@acme/calm-keycloak-idp`) to the org's private npm registry.
-
-End-users configure their `~/.calm.json`:
-
-```json
-{
-  "calmHubUrl": "https://calm.acme.internal",
-  "authPluginPath": "~/acme-calmhub-plugin.js",
-  "directUrlAuth": {
-    "type": "custom",
-    "module": "@acme/calm-keycloak-idp",
-    "options": {
-      "realm": "acme-prod",
-      "audience": "calm-api"
-    }
-  }
-}
-```
-
-The CLI's `createDirectUrlAuthPlugin` dynamically imports `@acme/calm-keycloak-idp`, passes
-`options` to the constructor, wraps the result in `IdpAuthPlugin`, and delivers it only to
-`DirectUrlDocumentLoader`. No code in the `architecture-as-code` repo needs to change when
-a new org IDP is added.
+The required product change is therefore not "implement every possible
+enterprise auth flow in this repository." It is "provide a supported path for
+an organization module to participate in direct URL authentication."
 
 ```mermaid
 sequenceDiagram
@@ -396,17 +324,17 @@ sequenceDiagram
     participant CLI as calm-cli
     participant Factory as createAuthPluginFromConfig
     participant Dyn as dynamic import()
-    participant Ext as @acme/calm-keycloak-idp
+    participant Ext as @acme/calm-inhouse-idp
     participant IAP as IdpAuthPlugin
     participant Loader as DirectUrlDocumentLoader
 
     User->>CLI: calm validate --architecture arch.json
     CLI->>Factory: createDirectUrlAuthPlugin(config.directUrlAuth)
-    Factory->>Dyn: import("@acme/calm-keycloak-idp")
+    Factory->>Dyn: import("@acme/calm-inhouse-idp")
     Dyn->>Ext: load module
-    Ext-->>Dyn: class AcmeKeycloakIdpClient
-    Dyn-->>Factory: AcmeKeycloakIdpClient
-    Factory->>Ext: new AcmeKeycloakIdpClient(options)
+    Ext-->>Dyn: class AcmeInhouseIdpClient
+    Dyn-->>Factory: AcmeInhouseIdpClient
+    Factory->>Ext: new AcmeInhouseIdpClient(options)
     Factory->>IAP: new IdpAuthPlugin(acmeClient)
     Factory-->>CLI: authPlugin
     CLI->>Loader: loadMissingDocument(url)
@@ -416,213 +344,57 @@ sequenceDiagram
     IAP-->>Loader: { Authorization: "Bearer <token>" }
 ```
 
+In practical terms, the direct URL path changes by loading the organization
+module, asking it for authentication information, and using the returned data
+to augment the outgoing request. No equivalent change is required for the
+existing CALM Hub path.
+
 ---
 
 ### Configuration Reference
 
-All configuration lives in `~/.calm.json` (or overridden by environment variables).
+The example below is illustrative only. It is not prescriptive of the final
+configuration design, naming, or protocol choices; it exists to show one
+possible way the direct URL auth hook could be expressed in a real config file.
 
-**CALM Hub auth** — existing field, unchanged:
-
-| Field | Description |
-|---|---|
-| `authPluginPath` | Path to a `.js` file or npm package name that `export default`s an `AuthPlugin` class |
-
-**Direct URL auth** — new `directUrlAuth` object:
-
-| `directUrlAuth.type` | Fields | Description |
-|---|---|---|
-| *(absent)* | — | No auth; direct URLs are fetched unauthenticated (current behaviour) |
-| `static-token` | `token` or `envVar` | Bearer token from a literal value or env var name |
-| `api-key` | `apiKey`/`envVar`, `headerName?` | API key; defaults to `X-API-Key` header |
-| `client-credentials` | `tokenUrl`, `clientId`, `clientSecret`/`clientSecretEnvVar`, `scopes?` | OAuth2 machine-to-machine grant |
-| `pkce` | `authorizationUrl`, `tokenUrl`, `clientId`, `redirectPort?`, `scopes?` | OAuth2 Authorization Code + PKCE (interactive) |
-| `custom` | `module`, `options?` | External `IdpClient` from an npm package name or file path |
-
-Example showing both loaders with independent credentials:
+An illustrative example of the configuration shape looks like this, showing
+how the CLI can be told where the end-user organization module is located so
+it can provide authentication information for the direct URL loader:
 
 ```json
 {
-  "calmHubUrl": "https://calm.acme.com",
-  "authPluginPath": "~/acme-calmhub-plugin.js",
+  "authPluginPath": "~/plugins/calm-hub-auth.js",
   "directUrlAuth": {
-    "type": "client-credentials",
-    "tokenUrl": "https://idp.acme.com/token",
-    "clientId": "calm-cli",
-    "clientSecretEnvVar": "CALM_CLIENT_SECRET"
+    "module": "~/plugins/acme-direct-url-auth.js",
+    "options": {
+      "tokenUrl": "https://idp.acme.example.com/oauth/token",
+      "clientId": "calm-direct-url",
+      "clientSecret": "${ACME_IDP_CLIENT_SECRET}",
+      "scopes": ["calm:read", "calm:documents"],
+      "headerName": "Authorization",
+      "headerPrefix": "Bearer "
+    }
   }
 }
 ```
 
-**Environment variable overrides for direct URL auth** (take precedence over file values):
-
-| Variable | Effect |
-|---|---|
-| `CALM_AUTH_PLUGIN_PATH` | Path to a `.js` `AuthPlugin` file for CALM Hub (existing) |
-| `CALM_DIRECT_URL_AUTH_TYPE` | Sets `directUrlAuth.type` |
-| `CALM_DIRECT_URL_AUTH_TOKEN` | Sets `directUrlAuth.token` for `static-token` |
-| `CALM_DIRECT_URL_AUTH_CLIENT_ID` | Sets `directUrlAuth.clientId` |
-| `CALM_DIRECT_URL_AUTH_CLIENT_SECRET` | Sets `directUrlAuth.clientSecret` |
-| `CALM_DIRECT_URL_AUTH_MODULE` | Sets `directUrlAuth.module` for `custom` |
-
----
-
-## Implementation Plan
-
-The implementation is split into four phases. Phases 1 and 2 are independent and can be developed
-in parallel. Phase 3 depends on Phase 1. Phase 4 depends on all prior phases.
-
-```mermaid
-gantt
-    dateFormat  YYYY-MM-DD
-    axisFormat  Phase %s
-
-    section Phase 1 · calm-auth package
-    Scaffold package (package.json, tsconfig, vitest)     :p1a, 2025-01-01, 1d
-    IdpClient interface                                    :p1b, after p1a, 1d
-    StaticTokenIdpClient + tests                          :p1c, after p1b, 1d
-    ApiKeyIdpClient + tests                               :p1d, after p1b, 1d
-    ClientCredentialsIdpClient + tests                    :p1e, after p1b, 2d
-    PkceIdpClient + tests                                 :p1f, after p1b, 3d
-    IdpAuthPlugin + tests                                 :p1g, after p1c, 1d
-    Barrel export (index.ts)                              :p1h, after p1g, 1d
-
-    section Phase 2 · DirectUrlDocumentLoader auth
-    Add authPlugin param + interceptor                    :p2a, 2025-01-01, 1d
-    Update DirectUrlDocumentLoader tests                  :p2b, after p2a, 1d
-
-    section Phase 3 · CLI structured config
-    Extend CLIConfig with directUrlAuth union             :p3a, after p1h, 1d
-    createDirectUrlAuthPlugin factory + tests             :p3b, after p3a, 2d
-    Add directUrlAuthPlugin to DocumentLoaderOptions      :p3c, after p3b p2b, 1d
-    mergeWithEnvVars env-var overrides                    :p3d, after p3c, 1d
-
-    section Phase 4 · Validation
-    Integration test: static-token + direct URL           :p4a, after p3d, 1d
-    Integration test: client-credentials + direct URL     :p4b, after p3d, 1d
-    Integration test: custom external module              :p4c, after p3d, 1d
-```
-
-### Step-by-Step Sequence
-
-**Phase 1 — `@finos/calm-auth` package**
-
-1. Create `calm-auth/` directory. Add `package.json` (name `@finos/calm-auth`, `main`/`types`
-   pointing at `dist/index`), `tsconfig.json` extending the root `tsconfig.base.json`, and
-   `vitest.config.ts`. Add `calm-auth` to the `workspaces` array in the root `package.json`.
-2. Create `calm-auth/src/idp/idp-client.ts` — export `interface IdpClient { getAccessToken(): Promise<string>; }`.
-3. Create `calm-auth/src/idp/static-token-idp-client.ts` — `StaticTokenIdpClient implements IdpClient`.
-   Constructor accepts `{ token?: string; envVar?: string }`; reads env var at call time (not at
-   construction) so the value can be injected after startup.
-4. Create `calm-auth/src/idp/api-key-idp-client.ts` — `ApiKeyIdpClient implements IdpClient`.
-   Identical shape to `StaticTokenIdpClient`; the distinction between a token and an API key is
-   expressed at the `IdpAuthPlugin` layer via `headerName`.
-5. Create `calm-auth/src/idp/client-credentials-idp-client.ts` — `ClientCredentialsIdpClient implements IdpClient`.
-   Issues a `POST` to `tokenUrl` with `grant_type=client_credentials`. Caches the response and
-   checks `exp - now < 60s` before issuing a new request. `clientSecret` may be supplied directly
-   or via `clientSecretEnvVar`.
-6. Create `calm-auth/src/idp/pkce-idp-client.ts` — `PkceIdpClient implements IdpClient`.
-   Generates a PKCE `code_verifier` and `code_challenge` (S256). Starts a temporary
-   `http.createServer` listener on `localhost:{redirectPort}` (default `4200`), opens the
-   authorization URL in the system browser (`child_process.exec` with platform detection for
-   macOS/Linux/Windows), receives the `code` callback, shuts the server, and exchanges the code
-   for tokens. Caches the result with the same expiry guard as `ClientCredentialsIdpClient`.
-7. Create `calm-auth/src/plugins/idp-auth-plugin.ts` — `IdpAuthPlugin implements AuthPlugin`
-   (imports `AuthPlugin` from `@finos/calm-shared`). Constructor signature:
-   `(idpClient: IdpClient, options?: { headerName?: string; headerPrefix?: string })`. Default
-   behaviour: `{ Authorization: "Bearer <token>" }`. When `headerName` is set: `{ [headerName]: token }`.
-8. Create `calm-auth/src/index.ts` — barrel export of all public symbols.
-9. Write unit tests for all classes in `calm-auth/src/**/*.spec.ts`. Use `vi.mock`/`axios-mock-adapter`
-   for `ClientCredentialsIdpClient` and inject a fake HTTP server for `PkceIdpClient`.
-
-**Phase 2 — Wire auth into `DirectUrlDocumentLoader`**
-
-10. Modify `shared/src/document-loader/direct-url-document-loader.ts`. Add `authPlugin?: AuthPlugin`
-    as the fourth constructor parameter. When provided, register an axios request interceptor that
-    calls `authPlugin.getAuthHeaders(fullUrl, config.data)` and merges the result into
-    `config.headers`. This mirrors the existing interceptor in `CalmHubDocumentLoader`.
-11. Add `directUrlAuthPlugin?: AuthPlugin` to the `DocumentLoaderOptions` type in
-    `shared/src/document-loader/document-loader.ts`. In `buildDocumentLoader()`, pass
-    `docLoaderOpts.directUrlAuthPlugin` to `DirectUrlDocumentLoader`:
-    `new DirectUrlDocumentLoader(debug, undefined, docLoaderOpts.allowedRemoteHosts, docLoaderOpts.directUrlAuthPlugin)`.
-    The existing `authPlugin` field and its use in `CalmHubDocumentLoader` are **not changed**.
-12. Update `shared/src/document-loader/direct-url-document-loader.spec.ts` to cover the
-    auth-interceptor path: assert that a provided `AuthPlugin`'s `getAuthHeaders` is called and
-    its result is merged into the outbound request headers.
-
-**Phase 3 — Structured auth config in the CLI**
-
-13. Extend `CLIConfig` in `cli/src/cli-config.ts` with a `directUrlAuth` field typed as a
-    discriminated union (see Configuration Reference table above). `authPluginPath` and all
-    existing CALM Hub auth loading code are **not touched**.
-14. Add `createDirectUrlAuthPlugin(config: CLIConfig, debug: boolean): Promise<AuthPlugin | undefined>`
-    to `cli/src/cli-config.ts`. If `directUrlAuth` is absent, returns `undefined` (no auth on
-    direct URLs, preserving current behaviour). Otherwise branches on `directUrlAuth.type` to
-    construct the right `IdpClient` and wraps it in `IdpAuthPlugin`. The `custom` branch calls
-    an internal `loadIdpClientModule(module, options)` helper that uses `dynamic import()`,
-    instantiates the default export with `options`, validates that `getAccessToken` is a function,
-    and wraps in `IdpAuthPlugin`.
-15. In `parseDocumentLoaderConfig` (`cli/src/cli.ts`), call `createDirectUrlAuthPlugin` and
-    assign the result to `docLoaderOpts.directUrlAuthPlugin`. The existing `authPluginPath`
-    block that sets `docLoaderOpts.authPlugin` is **not changed**.
-16. Extend `mergeWithEnvVars` in `cli-config.ts` to honour `CALM_DIRECT_URL_AUTH_TYPE`,
-    `CALM_DIRECT_URL_AUTH_TOKEN`, `CALM_DIRECT_URL_AUTH_CLIENT_ID`,
-    `CALM_DIRECT_URL_AUTH_CLIENT_SECRET`, and `CALM_DIRECT_URL_AUTH_MODULE` environment variables,
-    mapping them onto the `directUrlAuth` discriminated union.
-17. Add tests in `cli/src/cli-config.spec.ts` covering: all five `directUrlAuth.type` branches,
-    env-var override precedence, absence of `directUrlAuth` returning `undefined`, and
-    missing-module error handling for `custom`. Existing `authPluginPath` tests are unchanged.
-
-**Phase 4 — Verification**
-
-18. Add an integration test that configures `directUrlAuth.type: static-token`, runs
-    `calm validate` against a mock `https://` server requiring a `Bearer` header, and asserts
-    the `DirectUrlDocumentLoader` request carries the correct header.
-19. Add an integration test that configures `directUrlAuth.type: client-credentials`, mocks the
-    token endpoint, and asserts the obtained token appears in `DirectUrlDocumentLoader` requests.
-    Separately verify that `CalmHubDocumentLoader` in the same run uses its own unrelated
-    `authPlugin` (from `authPluginPath`), confirming the two paths are independent.
-20. Add an integration test for the `custom` module path using a local fixture implementing
-    `IdpClient` (a new `cli/test_fixtures/test-idp-client.js` alongside the existing
-    `test-auth-plugin.js`).
-
----
-
-## Files Changed
-
-| File | Change |
-|---|---|
-| `calm-auth/` | New package — `IdpClient`, all implementations, `IdpAuthPlugin` |
-| `package.json` (root) | Add `calm-auth` to `workspaces` |
-| `shared/src/document-loader/direct-url-document-loader.ts` | Add `authPlugin` param + axios interceptor |
-| `shared/src/document-loader/document-loader.ts` | Add `directUrlAuthPlugin` to `DocumentLoaderOptions`; pass it to `DirectUrlDocumentLoader` |
-| `cli/src/cli-config.ts` | Add `directUrlAuth` to `CLIConfig`; add `createDirectUrlAuthPlugin`; extend `mergeWithEnvVars` |
-| `cli/src/cli.ts` | Call `createDirectUrlAuthPlugin` and assign to `docLoaderOpts.directUrlAuthPlugin` |
-
-Files that are **not changed**:
-
-| File | Reason |
-|---|---|
-| `shared/src/auth/auth-plugin.ts` | Interface is already correct |
-| `shared/src/auth/no-auth-plugin.ts` | Unchanged fallback |
-| `shared/src/document-loader/calmhub-document-loader.ts` | CALM Hub auth path is untouched |
-| `cli/src/cli-config.ts` — `loadAuthPlugin` | Existing function unchanged |
-| `cli/src/cli.ts` — `authPluginPath` block | Existing CALM Hub auth loading unchanged |
+This example is intentionally illustrative: the direct URL path resolves a
+module located by the organization for protected fetches, while the existing
+`authPluginPath` setting remains available for the unchanged CALM Hub behavior.
+The actual config shape and naming can vary by implementation, but the required
+behavior is the same: the CLI resolves the direct URL auth module, the loader
+calls it for the request being made, and the returned headers are added before
+the fetch is sent.
 
 ---
 
 ## Constraints and Notes
 
-- **Backward compatibility**: the existing `authPluginPath` mechanism and all CALM Hub auth code
-  are not touched. Users with no `directUrlAuth` config see no change in behaviour — direct URLs
-  remain unauthenticated as today. No migration is required.
-- **Secret storage**: storing `clientSecret` or `token` in plaintext in `~/.calm.json` is
-  acceptable for local developer use. Production and CI deployments should use the `envVar` /
-  `clientSecretEnvVar` fields to read secrets from the environment at runtime.
-- **PKCE in headless environments**: the PKCE flow opens a browser window and cannot complete in
-  non-interactive CI. Use `static-token` or `client-credentials` for automation.
-- **PKCE token refresh**: the MVP caches the initial access token and re-runs the full PKCE flow
-  on expiry. Refresh-token support is a follow-up item.
-- **External IDP packages**: organisations must ensure `@acme/calm-keycloak-idp` (or equivalent)
-  is installed in the Node.js environment that runs `calm`. For global CLI installs, the package
-  should be installed globally alongside `@finos/calm-cli`.
+- Backward compatibility is required: current CALM Hub authentication remains
+  unchanged.
+- The organization module owns the logic for obtaining whatever authentication
+  information its environment requires.
+- The direct URL path owns request augmentation, meaning it applies the module
+  output to the outbound request before fetching the document.
+- Specific protocols, package names, and config shapes shown in diagrams are
+  illustrative unless and until implementation work chooses concrete forms.

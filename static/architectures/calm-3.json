@@ -48,7 +48,7 @@
             "description": "Central registry and API service for CALM architectures, patterns, and standards built with Quarkus",
             "development-language": "Java",
             "details": {
-                "detailed-architecture": "https://localhost:8443/architectures/calm-hub-detail.architecture.json"
+                "detailed-architecture": "http://my-arch.repo:8081/architectures/calm-hub-detail.architecture.json"
             },
             "interfaces": [
                 {

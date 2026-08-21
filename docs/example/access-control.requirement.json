@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calmhub.example.com/calm/domains/security/controls/node-access-control/requirement/versions/1.0.0",
+  "title": "Node Access Control Requirement",
+  "description": "A simple control requirement used by the local two-node CALM validation example.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://calm.finos.org/release/1.2/meta/control-requirement.json"
+    }
+  ],
+  "properties": {
+    "control-id": {
+      "const": "security-101"
+    },
+    "name": {
+      "const": "Node Access Control"
+    },
+    "description": {
+      "const": "Each node must declare that access control is enabled."
+    },
+    "access-control-enabled": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "control-id",
+    "name",
+    "description",
+    "access-control-enabled"
+  ]
+}
