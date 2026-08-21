@@ -1,0 +1,5 @@
+{
+  "tokenUrl": "https://idp.example.com/oauth/token",
+  "clientId": "calm-direct-url",
+  "clientSecret": "replace-me"
+}
