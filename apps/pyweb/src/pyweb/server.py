@@ -13,6 +13,8 @@ from urllib.parse import unquote, urlsplit
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8081
+SIMPLE_AUTH_HEADER = "Authorization"
+SIMPLE_AUTH_VALUE = "XYZ"
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -30,10 +32,12 @@ class ServerConfig:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
     static_root: Path = find_repo_root() / "static"
+    simple_auth: bool = False
 
 
 class StaticFileRequestHandler(BaseHTTPRequestHandler):
     static_root = find_repo_root() / "static"
+    simple_auth = False
     server_version = "pyweb/0.1"
     sys_version = ""
 
@@ -48,6 +52,10 @@ class StaticFileRequestHandler(BaseHTTPRequestHandler):
 
         if request_path == "/health":
             self._serve_health(include_body=include_body)
+            return
+
+        if self.simple_auth and not self._has_valid_simple_auth():
+            self.send_error(HTTPStatus.FORBIDDEN, "Forbidden")
             return
 
         resolved_path = self._resolve_static_path(request_path)
@@ -76,6 +84,9 @@ class StaticFileRequestHandler(BaseHTTPRequestHandler):
         if include_body:
             self.wfile.write(payload)
 
+    def _has_valid_simple_auth(self) -> bool:
+        return self.headers.get(SIMPLE_AUTH_HEADER) == SIMPLE_AUTH_VALUE
+
     @classmethod
     def _resolve_static_path(cls, request_path: str) -> Path | None:
         decoded_path = unquote(request_path)
@@ -103,7 +114,10 @@ def create_server(config: ServerConfig) -> ThreadingHTTPServer:
     handler_class = type(
         "ConfiguredStaticFileRequestHandler",
         (StaticFileRequestHandler,),
-        {"static_root": config.static_root.resolve()},
+        {
+            "static_root": config.static_root.resolve(),
+            "simple_auth": config.simple_auth,
+        },
     )
     return ThreadingHTTPServer((config.host, config.port), handler_class)
 
@@ -114,9 +128,18 @@ def parse_args(argv: Sequence[str] | None = None) -> ServerConfig:
     )
     parser.add_argument("--host", default=DEFAULT_HOST, help="Host interface to bind.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to listen on.")
+    parser.add_argument(
+        "--simple-auth",
+        action="store_true",
+        help="Require Authorization: XYZ for static file GET and HEAD requests.",
+    )
 
     arguments = parser.parse_args(argv)
-    return ServerConfig(host=arguments.host, port=arguments.port)
+    return ServerConfig(
+        host=arguments.host,
+        port=arguments.port,
+        simple_auth=arguments.simple_auth,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
