@@ -7,7 +7,7 @@
     "test": "npm run build && node --test tests/*.test.mjs"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^26.0.0",
     "typescript": "^5.9.2"
   }
 }
