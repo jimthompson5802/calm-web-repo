@@ -22,8 +22,7 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 - `static_http/` and `static_authcerts/` hold the source CALM static trees used by the local web-server startup modes.
 - Each static tree contains `architectures/`, `patterns/`, `standards/`, and `controls/` content.
-- `apps/api/` holds the Python service scaffold (FUTURE WORK).
-- `apps/web/` holds the TypeScript web scaffold (FUTURE WORK).
+- `apps/pyweb/` holds the small Python server used by the authonly local mode.
 - `infra/nginx/` holds the Nginx config and local TLS assets.
 - `infra/keycloak/` holds the local Keycloak realm template used to generate the dev import.
 
@@ -40,20 +39,16 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 ## Commands
 
-- `make bootstrap` shows dependency install commands.
 - `make start-webserver-noauth` mounts `static_http/` directly into `nginx` and starts it on `http://<host>:8080`.
 - `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://127.0.0.1:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
-- `make test-api` runs the Python API tests.
-- `make typecheck-web` runs the TypeScript typecheck.
 
 ## Validation
 
 - `docker-compose config` validates Compose configuration.
 - `CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose config` validates the noauth nginx selection.
-- `make test-api` validates Python API behavior.
-- `make typecheck-web` validates TypeScript types.
+- `uv run --project apps/pyweb pytest` validates Python authonly server behavior.
 - `./scripts/validate-architecture.sh` is intentionally unchanged in this repo revision and still needs a follow-up update before it matches the authenticated HTTPS-only stack.
 
 ## Control Authoring Note
@@ -94,22 +89,6 @@ Sample URLs after `make start-webserver-noauth`:
 - `http://my-calm.repo:8080/healthz`
 
 For bearer-token CLI flows using CALM `directUrlAuth`, `my-calm.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
-
-## Install
-
-Python (FUTURE WORK):
-
-```sh
-cd apps/api
-uv sync
-```
-
-TypeScript (FUTURE WORK):
-
-```sh
-cd apps/web
-npm install
-```
 
 ## Web Server
 
@@ -216,21 +195,6 @@ Stop the static server and remove the Compose resources:
 
 ```sh
 make stop-webserver
-```
-
-## API Access
-Run the API directly (FUTURE WORK):
-
-```sh
-cd apps/api
-uv run uvicorn calm_api.main:app --reload
-```
-
-Run the web app directly (FUTURE WORK):
-
-```sh
-cd apps/web
-npm run dev
 ```
 
 ## Secret Handling

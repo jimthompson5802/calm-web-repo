@@ -1,4 +1,4 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts stop-webserver bootstrap test-api typecheck-web _prepare-calm-config
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts stop-webserver _prepare-calm-config
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
@@ -47,18 +47,3 @@ start-webserver-authcerts:
 # stop the nginx server and remove compose resources
 stop-webserver:
 	docker-compose down
-
-
-# future use
-bootstrap:
-	@echo "Python: cd apps/api && uv sync"
-	@echo "TypeScript: cd apps/web && npm install"
-
-
-# future use
-test-api:
-	cd apps/api && uv run pytest
-
-# future use
-typecheck-web:
-	cd apps/web && npm run typecheck

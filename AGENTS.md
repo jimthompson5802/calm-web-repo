@@ -17,8 +17,7 @@
 - Put CALM standard JSON files in the appropriate `static_*/standards/` tree.
 - Put CALM control requirement schemas in the appropriate `static_*/controls/**/schemas/` tree.
 - Put CALM control configs in the appropriate `static_*/controls/**/configs/` tree.
-- Keep Python service work under `apps/api/`.
-- Keep TypeScript web work under `apps/web/`.
+- Keep authonly Python server work under `apps/pyweb/`.
 - Keep Nginx config under `infra/nginx/`.
 - Keep repo guidance and usage notes in `docs/`.
 - Keep helper scripts in `scripts/`.
@@ -29,14 +28,11 @@
 - `make start-webserver-authonly`
 - `make start-webserver-authcerts`
 - `make stop-webserver`
-- `make bootstrap`
-- `make test-api`
-- `make typecheck-web`
+- `uv run --project apps/pyweb pytest`
 - `./scripts/validate-architecture.sh`
 
 ## Validation
 
 - Validate Compose changes with `docker-compose config`.
-- Validate Python changes with `make test-api`.
-- Validate TypeScript changes with `make typecheck-web`.
+- Validate Python changes with `uv run --project apps/pyweb pytest`.
 - Validate CALM architecture changes with `./scripts/validate-architecture.sh` after the static server is running.

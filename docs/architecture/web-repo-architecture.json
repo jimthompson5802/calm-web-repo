@@ -57,7 +57,7 @@
       "unique-id": "keycloak-realm-config",
       "node-type": "data-asset",
       "name": "Keycloak Realm Configuration",
-      "description": "The imported realm definition for calm-local that provisions the calm-web client and the local test user used by the authentication stack.",
+      "description": "The imported realm definition for calm-local that provisions the OAuth client and the local test user used by the authentication stack.",
       "environment": "local-development"
     },
     {
@@ -186,7 +186,7 @@
     },
     {
       "unique-id": "keycloak-to-realm-config",
-      "description": "Keycloak loads the imported calm-local realm definition at startup so the calm-web client and test user are available.",
+      "description": "Keycloak loads the imported calm-local realm definition at startup so the OAuth client and test user are available.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
