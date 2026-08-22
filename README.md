@@ -42,7 +42,7 @@ The canonical local stack origin is `https://my-arch.repo:8443`. Each startup ta
 
 - `make bootstrap` shows dependency install commands.
 - `make start-webserver-noauth` copies `static_noauth/` into `infra/nginx/rendered-static/` and starts only `nginx` on `http://<host>:8080`.
-- `make start-webserver-authonly` generates local TLS/auth assets, copies `static_authonly/` into `infra/nginx/rendered-static/`, and starts the full auth stack in detached mode.
+- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json` and runs the `apps/pyweb` server in the foreground on `http://127.0.0.1:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, copies `static_authcerts/` into `infra/nginx/rendered-static/`, and starts the full auth stack in detached mode.
 - `make stop-web-server` stops the Nginx service and removes the Compose resources.
 - `make test-api` runs the Python API tests.
@@ -65,22 +65,23 @@ The canonical local stack origin is `https://my-arch.repo:8443`. Each startup ta
 
 ## Static Content
 
-`make start-webserver-authonly` and `make start-webserver-authcerts` serve static content through the authenticated HTTPS endpoint. Requests without a valid bearer token receive `401 Unauthorized`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, `/healthz` remains anonymous.
+`make start-webserver-authonly` serves static content through the foreground Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-arch.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
 
-Sample URLs after auth-enabled startup targets:
+Sample URLs after `make start-webserver-authonly`:
+
+- `http://127.0.0.1:8080/architectures/calm-1.json`
+- `http://127.0.0.1:8080/patterns/company-base-pattern.json`
+- `http://127.0.0.1:8080/controls/security/schemas/tls-encryption.json`
+- `http://127.0.0.1:8080/health`
+
+Sample URLs after `make start-webserver-authcerts`:
 
 - `https://my-arch.repo:8443/`
 - `https://my-arch.repo:8443/architectures/calm-1.json`
 - `https://my-arch.repo:8443/patterns/company-base-pattern.json`
 - `https://my-arch.repo:8443/standards/company-node-standard.json`
 - `https://my-arch.repo:8443/controls/security/schemas/tls-encryption.json`
-
-Anonymous health check:
-
 - `https://my-arch.repo:8443/healthz`
-
-In the auth-enabled modes, the Keycloak admin console uses the same HTTPS origin:
-
 - `https://my-arch.repo:8443/keycloak/admin/master/console/`
 
 Sample URLs after `make start-webserver-noauth`:
@@ -139,14 +140,22 @@ make start-webserver-authcerts
 - start only `nginx` with the noauth nginx config and `8080:8080` port publishing
 - serve repository content over `http://<host>:8080` without `keycloak` or `oauth2-proxy`
 
-`make start-webserver-authonly` and `make start-webserver-authcerts` will:
+`make start-webserver-authonly` will:
+
+- repoint `~/.calm.json` to `~/.calmauthonly.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
+- print a console hint telling you to press `CTRL-C` to stop the Python web server
+- run `uv run --project apps/pyweb pyweb --simple-auth` in the foreground
+- serve repository content from `static_authonly/` through `http://127.0.0.1:8080`
+- require `Authorization: XYZ` for static `GET` and `HEAD` requests
+
+`make start-webserver-authcerts` will:
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
 - run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - run `./scripts/render-direct-url-auth-config.py` to generate `custom-idp/v2/generated/direct-url-auth.json` for the local machine client
-- repoint `~/.calm.json` to `~/.calmauthonly.json` or `~/.calmauthcerts.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
-- replace `infra/nginx/rendered-static/` with a literal copy of `static_authonly/` or `static_authcerts/`, depending on the target
+- repoint `~/.calm.json` to `~/.calmauthcerts.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
+- replace `infra/nginx/rendered-static/` with a literal copy of `static_authcerts/`
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through bearer-token-authenticated HTTPS
 - serve the Keycloak admin console through the HTTPS Keycloak path
@@ -165,7 +174,7 @@ openssl rand -hex 24
 
 ### CALM CLI direct URL auth
 
-Build the supported local auth module after starting an auth-enabled stack:
+Build the supported local cert-based auth module after starting `make start-webserver-authcerts`:
 
 ```sh
 cd custom-idp/v2
@@ -181,7 +190,7 @@ Each startup target now selects the active CALM CLI config by repointing `~/.cal
 
 If `~/.calm.json` is already a symlink, the target replaces it. If it exists as a regular file, startup fails instead of overwriting it.
 
-For the auth-enabled stack, point the mode-specific file at the built module and the generated local config:
+For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built module and the generated local config:
 
 ```json
 {
@@ -208,6 +217,8 @@ Stop the static server and remove the Compose resources:
 ```sh
 make stop-web-server
 ```
+
+Stop the authonly Python web server with `CTRL-C` in the terminal where you started it.
 
 ## API Access
 Run the API directly (FUTURE WORK):

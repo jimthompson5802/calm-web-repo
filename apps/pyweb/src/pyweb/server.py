@@ -129,11 +129,12 @@ def print_startup_messages(config: ServerConfig) -> None:
             "Simple authentication enabled; static GET and HEAD requests require "
             f"{SIMPLE_AUTH_HEADER}: {SIMPLE_AUTH_VALUE}"
         )
+    print("Press CTRL-C to stop the Python web server.")
 
 
 def parse_args(argv: Sequence[str] | None = None) -> ServerConfig:
     parser = argparse.ArgumentParser(
-        description="Serve files from calm-web-repo/static using Python's standard library."
+        description="Serve files from calm-web-repo/static_authonly using Python's standard library."
     )
     parser.add_argument("--host", default=DEFAULT_HOST, help="Host interface to bind.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to listen on.")

@@ -33,17 +33,11 @@ start-webserver-noauth:
 		CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose up -d --no-deps nginx
 
 
-# start the full auth stack using the authonly static tree
+# start the authonly Python web server using the authonly static tree
 start-webserver-authonly:
-	@host="$$(python3 ./scripts/detect_public_host.py)"; \
-		export CALM_PUBLIC_HOST="$$host"; \
-		echo "Using local stack host: $$host"; \
-		$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthonly.json" _prepare-calm-config; \
-		./scripts/generate-local-certs.sh; \
-		./scripts/render-keycloak-realm.py; \
-		./scripts/render-direct-url-auth-config.py; \
-		$(MAKE) STATIC_SOURCE=static_authonly _prepare-rendered-static; \
-		docker-compose up -d keycloak oauth2-proxy nginx
+	@$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthonly.json" _prepare-calm-config
+	@echo "Press CTRL-C to stop the Python web server."
+	uv run --project apps/pyweb pyweb --simple-auth
 
 
 # start the full auth stack using the authcerts static tree

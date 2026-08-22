@@ -5,7 +5,7 @@ This directory contains two minimal TypeScript examples of a `directUrlAuth.modu
 - [`v1/`](./v1/) builds the `direct-url-auth-v1` example
 - [`v2/`](./v2/) builds the `direct-url-auth-v2` example
 
-For the local `setup-keycloak-web` stack, `v2` is the supported module. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by `make start-webserver-authonly` or `make start-webserver-authcerts`.
+For the local `setup-keycloak-web` stack, `v2` is the supported module for `make start-webserver-authcerts`. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by that target.
 
 Each example has the same structure:
 
@@ -53,7 +53,7 @@ source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && npx vitest run shared/src/do
 
 ## Use with CALM
 
-For this stack, point `~/.calm.json` at the built `v2` JavaScript file and the generated local config:
+For the cert-based auth stack, point `~/.calmauthcerts.json` at the built `v2` JavaScript file and the generated local config:
 
 ```json
 {

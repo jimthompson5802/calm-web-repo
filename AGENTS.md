@@ -3,8 +3,8 @@
 ## Scope
 
 - Nginx is static-first for repo content in the current local stack.
-- Static content can be served either through authenticated HTTPS backed by Keycloak or through a noauth HTTP nginx-only mode on port `8080`.
-- `oauth2-proxy` sits in front of normal content requests in the auth-enabled modes.
+- Static content can be served through the foreground `apps/pyweb` authonly mode, through authenticated HTTPS backed by Keycloak, or through a noauth HTTP nginx-only mode on port `8080`.
+- `oauth2-proxy` sits in front of normal content requests in the cert-based auth mode.
 - `/healthz` is the anonymous operational endpoint.
 - `/keycloak/` is exposed for the local auth and admin flow.
 - `/api` is reserved for future reverse proxying.

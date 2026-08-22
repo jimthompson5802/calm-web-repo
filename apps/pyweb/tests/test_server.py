@@ -170,7 +170,7 @@ def test_parse_args_uses_default_bind_values() -> None:
 
     assert config.host == DEFAULT_HOST
     assert config.port == DEFAULT_PORT
-    assert config.static_root == Path(__file__).resolve().parents[3] / "static"
+    assert config.static_root == Path(__file__).resolve().parents[3] / "static_authonly"
     assert config.simple_auth is False
 
 
@@ -188,6 +188,7 @@ def test_print_startup_messages_without_simple_auth(capsys: object) -> None:
     captured = capsys.readouterr()
     assert "Serving" in captured.out
     assert "Simple authentication enabled" not in captured.out
+    assert "Press CTRL-C to stop the Python web server." in captured.out
 
 
 def test_print_startup_messages_with_simple_auth(capsys: object) -> None:
@@ -197,3 +198,4 @@ def test_print_startup_messages_with_simple_auth(capsys: object) -> None:
     assert "Serving" in captured.out
     assert "Simple authentication enabled" in captured.out
     assert f"{SIMPLE_AUTH_HEADER}: {SIMPLE_AUTH_VALUE}" in captured.out
+    assert "Press CTRL-C to stop the Python web server." in captured.out

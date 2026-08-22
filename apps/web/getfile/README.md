@@ -8,7 +8,7 @@ Node/TypeScript CLI for fetching CALM files from the local Keycloak-protected ng
 
 - Node.js
 - npm
-- The local auth-enabled web stack running via `make start-webserver-authonly` or `make start-webserver-authcerts`
+- The local cert-based auth web stack running via `make start-webserver-authcerts`
 - A browser available on the local machine
 
 The protected CALM files in this repo are canonically served from `https://my-arch.repo:8443/...`. `localhost` remains accepted for compatibility when the local stack origin file points at a different host.
@@ -39,7 +39,7 @@ From `apps/web`:
 npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json
 ```
 
-If you override `CALM_PUBLIC_HOST`, `getfile` uses the configured stack origin resolved by the auth startup target so both the browser and Docker containers can reach the same Keycloak issuer.
+If you override `CALM_PUBLIC_HOST`, `getfile` uses the configured stack origin resolved by `make start-webserver-authcerts` so both the browser and Docker containers can reach the same Keycloak issuer.
 
 To target a specific browser app instead of the system default, pass `--browser`.
 For example on macOS:
@@ -69,7 +69,7 @@ Only the local stack origins are supported in this version:
 
 - `https://my-arch.repo:8443/...`
 - `https://localhost:8443/...`
-- the configured stack origin resolved by `make start-webserver-authonly` or `make start-webserver-authcerts`, such as `https://my-arch.repo:8443/...`
+- the configured stack origin resolved by `make start-webserver-authcerts`, such as `https://my-arch.repo:8443/...`
 
 The command:
 
