@@ -130,7 +130,7 @@ test("fails clearly when the token endpoint returns a non-200 response", async (
     }), async () => {
       await assert.rejects(
         plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
-        /Token request failed: 400 Bad Request/,
+        /Direct URL auth token request to https:\/\/idp\.example\.com\/oauth\/token failed: 400 Bad Request/,
       );
     });
   });
@@ -146,7 +146,7 @@ test("fails clearly when the token response omits access_token", async () => {
     }), async () => {
       await assert.rejects(
         plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
-        /No access_token in token response/,
+        /Direct URL auth token response from https:\/\/idp\.example\.com\/oauth\/token did not include access_token/,
       );
     });
   });
@@ -181,9 +181,66 @@ test("fails clearly when the TLS handshake fails", async () => {
     }), async () => {
       await assert.rejects(
         plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
-        /Token request failed: self-signed certificate/,
+        /Direct URL auth token request to https:\/\/idp\.example\.com\/oauth\/token failed: self-signed certificate/,
       );
     });
+  });
+});
+
+test("fails clearly when the config file cannot be parsed", async () => {
+  await withTempDir(async (root) => {
+    const configPath = path.join(root, "direct-url-auth.json");
+    await writeFile(configPath, "{not-json", "utf8");
+    const plugin = new DirectUrlAuthPlugin(configPath);
+
+    await assert.rejects(
+      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      /Failed to parse direct URL auth config at .*direct-url-auth\.json:/,
+    );
+  });
+});
+
+test("fails clearly when the configured CA certificate cannot be read", async () => {
+  await withTempDir(async (root) => {
+    const configPath = await writeConfig(root, { caCertPath: "./missing-ca.pem" });
+    const plugin = new DirectUrlAuthPlugin(configPath);
+
+    await assert.rejects(
+      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      /Failed to read direct URL auth CA certificate at .*missing-ca\.pem:/,
+    );
+  });
+});
+
+test("fails clearly when the token URL is invalid", async () => {
+  await withTempDir(async (root) => {
+    const configPath = await writeConfig(root, { tokenUrl: "::not-a-url::" });
+    const plugin = new DirectUrlAuthPlugin(configPath);
+
+    await assert.rejects(
+      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      /Invalid direct URL auth tokenUrl '::not-a-url::':/,
+    );
+  });
+});
+
+test("never leaks client secrets in error messages", async () => {
+  await withTempDir(async (root) => {
+    const clientSecret = "super-secret-value";
+    const configPath = await writeConfig(root, {
+      tokenUrl: "::not-a-url::",
+      clientSecret,
+    });
+    const plugin = new DirectUrlAuthPlugin(configPath);
+
+    await assert.rejects(
+      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      (error) => {
+        assert.equal(error instanceof Error, true);
+        assert.equal(error.message.includes(clientSecret), false);
+        return true;
+      },
+    );
   });
 });
 
