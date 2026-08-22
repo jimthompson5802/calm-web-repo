@@ -1,0 +1,145 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "start-webserver-authonly-architecture",
+  "name": "Start Webserver Authonly Architecture",
+  "description": "Architecture for the make start-webserver-authonly target, covering the Compose-managed pyweb service, the simple Authorization: XYZ contract, and the CALM CLI config switch used for the local header-protected HTTP stack.",
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A human architect or operator who starts the authonly local stack, updates the active CALM CLI config symlink, and requests repository assets through the header-protected Python web server.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "active-calm-config-link",
+      "node-type": "data-asset",
+      "name": "Active CALM CLI Config Link",
+      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls use the authonly configuration.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "authonly-calm-config",
+      "node-type": "data-asset",
+      "name": "Authonly CALM CLI Config",
+      "description": "The ~/.calmauthonly.json configuration file selected for local development against the authonly repository endpoint.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "simple-auth-contract",
+      "node-type": "data-asset",
+      "name": "Simple Authorization Header Contract",
+      "description": "The authonly access rule enforced by pyweb, requiring Authorization: XYZ for static GET and HEAD requests while leaving /health reachable without the header.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "repository-static-content-http",
+      "node-type": "data-asset",
+      "name": "HTTP Static Content Tree",
+      "description": "The static_http content tree mounted directly into the pyweb container so repository architecture files, patterns, standards, controls, and documentation are served from the local repo.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "pyweb-container",
+      "node-type": "container",
+      "name": "Pyweb Compose Container",
+      "description": "A container grouping representing the Compose-managed pyweb runtime that serves local repository assets in authonly mode.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "pyweb-service",
+      "node-type": "service",
+      "name": "Pyweb Static Server",
+      "description": "The apps/pyweb service started by make start-webserver-authonly, serving repository content from static_http over HTTP on 127.0.0.1:8080 with simple header-based protection.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "pyweb-http",
+          "host": "127.0.0.1",
+          "port": 8080
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "active-link-to-authonly-config",
+      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmauthonly.json before pyweb is launched.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "active-calm-config-link"
+          },
+          "destination": {
+            "node": "authonly-calm-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "pyweb-to-http-static-content",
+      "description": "The pyweb service serves static repository assets from the mounted static_http content tree.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "pyweb-service"
+          },
+          "destination": {
+            "node": "repository-static-content-http"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "pyweb-to-simple-auth-contract",
+      "description": "Pyweb enforces the Authorization: XYZ contract for static GET and HEAD requests while preserving unauthenticated access to the /health endpoint.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "pyweb-service"
+          },
+          "destination": {
+            "node": "simple-auth-contract"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "user-to-pyweb",
+      "description": "Architects request protected repository assets from pyweb over HTTP on 127.0.0.1:8080 and include Authorization: XYZ for static content access.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "repository-user"
+          },
+          "destination": {
+            "node": "pyweb-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "pyweb-container-composed-of",
+      "description": "The authonly Compose runtime groups the pyweb static server and the mounted static_http content tree used for local serving.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "composed-of": {
+          "container": "pyweb-container",
+          "nodes": [
+            "pyweb-service",
+            "repository-static-content-http"
+          ]
+        }
+      }
+    }
+  ]
+}

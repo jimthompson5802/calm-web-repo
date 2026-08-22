@@ -1,0 +1,160 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "start-webserver-noauth-architecture",
+  "name": "Start Webserver Noauth Architecture",
+  "description": "Architecture for the make start-webserver-noauth target, covering the nginx-only local static stack, the selected noauth CALM CLI configuration, and the setup helpers that prepare the HTTP endpoint on port 8080.",
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A human architect or operator who starts the noauth local stack, follows the host announcement from the startup flow, and requests the repository's static CALM assets over HTTP.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "public-host-detection-helper",
+      "node-type": "service",
+      "name": "Public Host Detection Helper",
+      "description": "The scripts/detect_public_host.py helper that resolves the local host name or IP exported as CALM_PUBLIC_HOST before the noauth nginx container is started.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "active-calm-config-link",
+      "node-type": "data-asset",
+      "name": "Active CALM CLI Config Link",
+      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls point at the configuration required for the noauth stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "noauth-calm-config",
+      "node-type": "data-asset",
+      "name": "Noauth CALM CLI Config",
+      "description": "The ~/.calmnoauth.json configuration file selected by the target so local CALM CLI usage follows the noauth repository endpoint conventions.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "noauth-nginx-config",
+      "node-type": "data-asset",
+      "name": "Noauth Nginx Config",
+      "description": "The infra/nginx/nginx.noauth.conf file mounted into the nginx container to expose the static tree and anonymous /healthz endpoint over HTTP on port 8080.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "repository-static-content-http",
+      "node-type": "data-asset",
+      "name": "HTTP Static Content Tree",
+      "description": "The static_http content tree mounted directly into nginx so architecture JSON, patterns, standards, controls, and related documentation are served from the local repository.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "nginx-static-server",
+      "node-type": "service",
+      "name": "Nginx Static Web Server",
+      "description": "The nginx Compose service started by make start-webserver-noauth, serving the repository's static content over plain HTTP on port 8080 without oauth2-proxy or Keycloak.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "nginx-http",
+          "host": "localhost",
+          "port": 8080
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "user-to-host-helper",
+      "description": "Architects run the public host detection helper to discover which local host the noauth startup flow will advertise before nginx is started.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": [
+            "public-host-detection-helper"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "host-helper-to-nginx",
+      "description": "The detected CALM_PUBLIC_HOST value informs the nginx startup flow and the host narrative announced for the local HTTP endpoint.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "public-host-detection-helper"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "active-link-to-noauth-config",
+      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmnoauth.json before the noauth web server is started.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "active-calm-config-link"
+          },
+          "destination": {
+            "node": "noauth-calm-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-noauth-config",
+      "description": "The nginx container loads the noauth nginx configuration that exposes repository assets and keeps /healthz anonymously available.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "noauth-nginx-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-http-static-content",
+      "description": "The nginx server serves static repository assets from the mounted static_http content tree.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "repository-static-content-http"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "user-to-nginx-noauth",
+      "description": "Architects request the repository's static site and CALM assets from nginx over anonymous HTTP on port 8080, while the /healthz endpoint remains open for operational checks.",
+      "dataClassification": "public",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "repository-user"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    }
+  ]
+}

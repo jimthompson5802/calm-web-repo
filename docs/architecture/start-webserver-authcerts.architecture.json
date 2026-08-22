@@ -1,0 +1,330 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "start-webserver-authcerts-architecture",
+  "name": "Start Webserver Authcerts Architecture",
+  "description": "Architecture for the make start-webserver-authcerts target, covering the HTTPS nginx, oauth2-proxy, and Keycloak stack, together with the generated certificates, realm import, direct-url-auth config, and CALM CLI config selection required for local bearer-token access.",
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A human architect or operator who starts the cert-based local stack, follows the generated HTTPS host, and requests repository assets through the authenticated nginx front end.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "public-host-detection-helper",
+      "node-type": "service",
+      "name": "Public Host Detection Helper",
+      "description": "The scripts/detect_public_host.py helper that resolves the local host name or IP exported as CALM_PUBLIC_HOST before certificates, realm files, and the auth stack are generated and started.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "active-calm-config-link",
+      "node-type": "data-asset",
+      "name": "Active CALM CLI Config Link",
+      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls use the cert-based auth configuration.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "authcerts-calm-config",
+      "node-type": "data-asset",
+      "name": "Authcerts CALM CLI Config",
+      "description": "The ~/.calmauthcerts.json configuration file selected for local HTTPS serving and direct URL authentication against the self-signed local stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "tls-certificate-assets",
+      "node-type": "data-asset",
+      "name": "Local TLS Certificate Assets",
+      "description": "The generated certificate and private key under infra/nginx/certs, used by nginx for TLS termination and by oauth2-proxy as the trusted CA file for the local issuer.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "keycloak-realm-import",
+      "node-type": "data-asset",
+      "name": "Generated Keycloak Realm Import",
+      "description": "The rendered Keycloak realm import generated from infra/keycloak/calm-local-realm.template.json, provisioning the calm-local realm, OAuth clients, and local test credentials for the auth stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "direct-url-auth-config",
+      "node-type": "data-asset",
+      "name": "Generated Direct URL Auth Config",
+      "description": "The generated custom-idp/v2/generated/direct-url-auth.json file that supplies the local machine-client auth configuration for CALM CLI direct URL loading against the authenticated HTTPS origin.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "repository-static-content-authcerts",
+      "node-type": "data-asset",
+      "name": "Authcerts Static Content Tree",
+      "description": "The static_authcerts content tree mounted directly into nginx so repository architectures, patterns, standards, controls, and related documentation are served through the authenticated HTTPS stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "nginx-static-server",
+      "node-type": "service",
+      "name": "Nginx Static Web Server",
+      "description": "The nginx Compose service started by make start-webserver-authcerts, serving repository assets over authenticated HTTPS on port 8443, exposing oauth2-proxy under /oauth2/, and reverse proxying Keycloak under /keycloak/.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "nginx-https",
+          "host": "localhost",
+          "port": 8443
+        }
+      ]
+    },
+    {
+      "unique-id": "oauth2-proxy-service",
+      "node-type": "service",
+      "name": "OAuth2 Proxy",
+      "description": "The oauth2-proxy container that enforces bearer-token or OIDC-backed access for protected static content and exchanges identity data with Keycloak for the local auth flow.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "oauth2-proxy-http",
+          "host": "oauth2-proxy",
+          "port": 4180
+        }
+      ]
+    },
+    {
+      "unique-id": "keycloak-service",
+      "node-type": "service",
+      "name": "Keycloak Identity Provider",
+      "description": "The Keycloak container that runs the calm-local realm, serves OIDC metadata and token endpoints, and backs the local admin console exposed through nginx.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "keycloak-http",
+          "host": "keycloak",
+          "port": 8080
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "user-to-host-helper",
+      "description": "Architects run the public host detection helper to discover which local host will be embedded into the generated auth-aware assets and HTTPS endpoint.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": [
+            "public-host-detection-helper"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "host-helper-to-nginx",
+      "description": "The detected CALM_PUBLIC_HOST value informs the nginx startup flow and the HTTPS host presented to local clients.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "public-host-detection-helper"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "host-helper-to-keycloak-realm-import",
+      "description": "The detected host is injected into the generated Keycloak realm import so local issuer and redirect settings match the HTTPS origin.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "public-host-detection-helper"
+          },
+          "destination": {
+            "node": "keycloak-realm-import"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "host-helper-to-direct-url-auth-config",
+      "description": "The detected host is written into the generated direct URL auth configuration so CALM CLI machine-client requests target the correct local HTTPS origin.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "public-host-detection-helper"
+          },
+          "destination": {
+            "node": "direct-url-auth-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "active-link-to-authcerts-config",
+      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmauthcerts.json before the authenticated HTTPS stack is started.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "active-calm-config-link"
+          },
+          "destination": {
+            "node": "authcerts-calm-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "authcerts-config-to-direct-url-auth-config",
+      "description": "The selected CALM CLI config references the generated direct URL auth configuration so local machine-client validation can authenticate to the protected HTTPS origin.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "authcerts-calm-config"
+          },
+          "destination": {
+            "node": "direct-url-auth-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-authcerts-static-content",
+      "description": "The nginx server serves static repository assets from the mounted static_authcerts content tree.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "repository-static-content-authcerts"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-tls-certificate-assets",
+      "description": "Nginx terminates HTTPS with the generated local certificate and private key mounted from infra/nginx/certs.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "tls-certificate-assets"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-tls-certificate-assets",
+      "description": "Oauth2-proxy trusts the generated local CA certificate so it can validate the public Keycloak issuer exposed through nginx.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "oauth2-proxy-service"
+          },
+          "destination": {
+            "node": "tls-certificate-assets"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-oauth2-proxy",
+      "description": "Nginx routes authentication callbacks and auth checks under /oauth2/ to oauth2-proxy so protected static content requires a valid bearer token or OIDC session.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "oauth2-proxy-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-keycloak",
+      "description": "Oauth2-proxy validates JWTs, redeems tokens, and reads OIDC metadata against the calm-local Keycloak realm during the local authentication flow.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "oauth2-proxy-service"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-keycloak",
+      "description": "Nginx exposes Keycloak's admin console and OIDC endpoints under /keycloak/ so the local HTTPS origin fronts both static content and identity flows.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "keycloak-to-realm-import",
+      "description": "Keycloak loads the generated calm-local realm import at startup so the local OAuth clients, service account, and test credentials are available.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "keycloak-service"
+          },
+          "destination": {
+            "node": "keycloak-realm-import"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "user-to-nginx-authcerts",
+      "description": "Architects request repository content from nginx over authenticated HTTPS on port 8443 while the anonymous /healthz endpoint remains available for operational checks.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "repository-user"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    }
+  ]
+}
