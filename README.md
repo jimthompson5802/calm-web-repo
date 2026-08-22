@@ -134,6 +134,7 @@ make start-webserver-authcerts
 `make start-webserver-noauth` will:
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
+- repoint `~/.calm.json` to `~/.calmnoauth.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
 - replace `infra/nginx/rendered-static/` with a literal copy of `static_noauth/`
 - start only `nginx` with the noauth nginx config and `8080:8080` port publishing
 - serve repository content over `http://<host>:8080` without `keycloak` or `oauth2-proxy`
@@ -144,6 +145,7 @@ make start-webserver-authcerts
 - run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - run `./scripts/render-direct-url-auth-config.py` to generate `custom-idp/v2/generated/direct-url-auth.json` for the local machine client
+- repoint `~/.calm.json` to `~/.calmauthonly.json` or `~/.calmauthcerts.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
 - replace `infra/nginx/rendered-static/` with a literal copy of `static_authonly/` or `static_authcerts/`, depending on the target
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through bearer-token-authenticated HTTPS
@@ -171,7 +173,15 @@ npm install
 npm test
 ```
 
-Point `~/.calm.json` at the built module and the generated local config:
+Each startup target now selects the active CALM CLI config by repointing `~/.calm.json`:
+
+- `make start-webserver-noauth` -> `~/.calmnoauth.json`
+- `make start-webserver-authonly` -> `~/.calmauthonly.json`
+- `make start-webserver-authcerts` -> `~/.calmauthcerts.json`
+
+If `~/.calm.json` is already a symlink, the target replaces it. If it exists as a regular file, startup fails instead of overwriting it.
+
+For the auth-enabled stack, point the mode-specific file at the built module and the generated local config:
 
 ```json
 {
