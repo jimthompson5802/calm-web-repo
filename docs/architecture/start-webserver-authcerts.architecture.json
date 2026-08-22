@@ -92,7 +92,7 @@
   "relationships": [
     {
       "unique-id": "user-to-host-helper",
-      "description": "Architects run the CALM CLI startup flow to discover which local host will be embedded into the generated auth-aware assets and HTTPS endpoint.",
+      "description": "Run calm validate.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -106,7 +106,7 @@
     },
     {
       "unique-id": "host-helper-to-nginx",
-      "description": "The CALM CLI supplies the detected CALM_PUBLIC_HOST value to the nginx startup flow and the HTTPS host presented to local clients.",
+      "description": "Retrieve CALM artifact for validation.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {

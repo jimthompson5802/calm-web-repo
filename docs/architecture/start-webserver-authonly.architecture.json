@@ -57,7 +57,7 @@
   "relationships": [
     {
       "unique-id": "user-to-calm-cli",
-      "description": "Architects run the CALM CLI startup flow to prepare the authonly local endpoint before pyweb is started.",
+      "description": "Run calm validate.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -71,7 +71,7 @@
     },
     {
       "unique-id": "calm-cli-to-pyweb",
-      "description": "The CALM CLI startup flow supplies the local endpoint details used to launch and announce the pyweb static web server.",
+      "description": "Retrieve CALM artifact for validation.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
