@@ -6,7 +6,7 @@ Protected repository content in the auth-enabled modes is bearer-token-only for 
 
 The local `calm-direct-url` machine client uses a Keycloak service-account token. The web stack is configured to accept that bearer token directly for protected static content.
 
-The canonical local stack origin is `https://my-arch.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
+The canonical local stack origin is `https://my-calm.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed CALM Architecture
 [CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
@@ -36,7 +36,7 @@ The canonical local stack origin is `https://my-arch.repo:8443`. Each startup ta
 - `uv`
 - Node.js (LTS recommended)
 - npm
-- A local hosts-file entry such as `127.0.0.1 my-arch.repo`
+- A local hosts-file entry such as `127.0.0.1 my-calm.repo`
 
 ## Commands
 
@@ -65,7 +65,7 @@ The canonical local stack origin is `https://my-arch.repo:8443`. Each startup ta
 
 ## Static Content
 
-`make start-webserver-authonly` serves static content through the foreground Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-arch.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
+`make start-webserver-authonly` serves static content through the foreground Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
 
 Sample URLs after `make start-webserver-authonly`:
 
@@ -76,24 +76,24 @@ Sample URLs after `make start-webserver-authonly`:
 
 Sample URLs after `make start-webserver-authcerts`:
 
-- `https://my-arch.repo:8443/`
-- `https://my-arch.repo:8443/architectures/calm-1.json`
-- `https://my-arch.repo:8443/patterns/company-base-pattern.json`
-- `https://my-arch.repo:8443/standards/company-node-standard.json`
-- `https://my-arch.repo:8443/controls/security/schemas/tls-encryption.json`
-- `https://my-arch.repo:8443/healthz`
-- `https://my-arch.repo:8443/keycloak/admin/master/console/`
+- `https://my-calm.repo:8443/`
+- `https://my-calm.repo:8443/architectures/calm-1.json`
+- `https://my-calm.repo:8443/patterns/company-base-pattern.json`
+- `https://my-calm.repo:8443/standards/company-node-standard.json`
+- `https://my-calm.repo:8443/controls/security/schemas/tls-encryption.json`
+- `https://my-calm.repo:8443/healthz`
+- `https://my-calm.repo:8443/keycloak/admin/master/console/`
 
 Sample URLs after `make start-webserver-noauth`:
 
-- `http://my-arch.repo:8080/`
-- `http://my-arch.repo:8080/architectures/calm-1.json`
-- `http://my-arch.repo:8080/patterns/company-base-pattern.json`
-- `http://my-arch.repo:8080/standards/company-node-standard.json`
-- `http://my-arch.repo:8080/controls/security/schemas/tls-encryption.json`
-- `http://my-arch.repo:8080/healthz`
+- `http://my-calm.repo:8080/`
+- `http://my-calm.repo:8080/architectures/calm-1.json`
+- `http://my-calm.repo:8080/patterns/company-base-pattern.json`
+- `http://my-calm.repo:8080/standards/company-node-standard.json`
+- `http://my-calm.repo:8080/controls/security/schemas/tls-encryption.json`
+- `http://my-calm.repo:8080/healthz`
 
-For bearer-token CLI flows using CALM `directUrlAuth`, `my-arch.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
+For bearer-token CLI flows using CALM `directUrlAuth`, `my-calm.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
 
 ## Install
 
@@ -116,7 +116,7 @@ npm install
 ### Start
 
 1. Copy `.env.example` to `.env`.
-2. Ensure your local resolver maps `my-arch.repo` to `127.0.0.1`.
+2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`.
 3. Set local-only values for:
    - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
@@ -194,7 +194,7 @@ For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built
 
 ```json
 {
-  "allowedRemoteHosts": ["my-arch.repo", "localhost"],
+  "allowedRemoteHosts": ["my-calm.repo", "localhost"],
   "directUrlAuth": {
     "module": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/dist/direct-url-auth.js",
     "configPath": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/generated/direct-url-auth.json"
@@ -207,7 +207,7 @@ The generated direct URL auth config includes the local CA certificate path, so 
 Then protected documents can be fetched non-interactively, for example:
 
 ```sh
-calm validate -a https://my-arch.repo:8443/architectures/calm-1.json
+calm validate -a https://my-calm.repo:8443/architectures/calm-1.json
 ```
 
 ### Stop

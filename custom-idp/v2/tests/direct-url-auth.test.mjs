@@ -104,7 +104,7 @@ test("requests a client-credentials token with form-encoded data", async () => {
         body: JSON.stringify({ access_token: "token-123", expires_in: 300 }),
       };
     }, async () => {
-      const headers = await plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json");
+      const headers = await plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json");
       assert.deepEqual(headers, { Authorization: "Bearer token-123" });
       assert.equal(calls.length, 1);
       assert.equal(calls[0].url.toString(), "https://idp.example.com/oauth/token");
@@ -129,7 +129,7 @@ test("fails clearly when the token endpoint returns a non-200 response", async (
       headers: { "content-type": "text/plain" },
     }), async () => {
       await assert.rejects(
-        plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+        plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
         /Direct URL auth token request to https:\/\/idp\.example\.com\/oauth\/token failed: 400 Bad Request/,
       );
     });
@@ -145,7 +145,7 @@ test("fails clearly when the token response omits access_token", async () => {
       body: JSON.stringify({ expires_in: 300 }),
     }), async () => {
       await assert.rejects(
-        plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+        plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
         /Direct URL auth token response from https:\/\/idp\.example\.com\/oauth\/token did not include access_token/,
       );
     });
@@ -165,7 +165,7 @@ test("uses the configured CA certificate for the token request", async () => {
         body: JSON.stringify({ access_token: "token-123", expires_in: 300 }),
       };
     }, async () => {
-      const headers = await plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json");
+      const headers = await plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json");
       assert.deepEqual(headers, { Authorization: "Bearer token-123" });
     });
   });
@@ -180,7 +180,7 @@ test("fails clearly when the TLS handshake fails", async () => {
       error: new Error("self-signed certificate"),
     }), async () => {
       await assert.rejects(
-        plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+        plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
         /Direct URL auth token request to https:\/\/idp\.example\.com\/oauth\/token failed: self-signed certificate/,
       );
     });
@@ -194,7 +194,7 @@ test("fails clearly when the config file cannot be parsed", async () => {
     const plugin = new DirectUrlAuthPlugin(configPath);
 
     await assert.rejects(
-      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
       /Failed to parse direct URL auth config at .*direct-url-auth\.json:/,
     );
   });
@@ -206,7 +206,7 @@ test("fails clearly when the configured CA certificate cannot be read", async ()
     const plugin = new DirectUrlAuthPlugin(configPath);
 
     await assert.rejects(
-      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
       /Failed to read direct URL auth CA certificate at .*missing-ca\.pem:/,
     );
   });
@@ -218,7 +218,7 @@ test("fails clearly when the token URL is invalid", async () => {
     const plugin = new DirectUrlAuthPlugin(configPath);
 
     await assert.rejects(
-      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
       /Invalid direct URL auth tokenUrl '::not-a-url::':/,
     );
   });
@@ -234,7 +234,7 @@ test("never leaks client secrets in error messages", async () => {
     const plugin = new DirectUrlAuthPlugin(configPath);
 
     await assert.rejects(
-      plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"),
+      plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
       (error) => {
         assert.equal(error instanceof Error, true);
         assert.equal(error.message.includes(clientSecret), false);
@@ -262,17 +262,17 @@ test("reuses a cached token until it is near expiry", async () => {
           body: JSON.stringify({ access_token: `token-${tokenIndex}`, expires_in: 120 }),
         };
       }, async () => {
-        assert.deepEqual(await plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-1.json"), {
+        assert.deepEqual(await plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"), {
           Authorization: "Bearer token-1",
         });
 
         now += 30_000;
-        assert.deepEqual(await plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-2.json"), {
+        assert.deepEqual(await plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-2.json"), {
           Authorization: "Bearer token-1",
         });
 
         now += 31_000;
-        assert.deepEqual(await plugin.getAuthHeaders("https://my-arch.repo:8443/architectures/calm-3.json"), {
+        assert.deepEqual(await plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-3.json"), {
           Authorization: "Bearer token-2",
         });
       });

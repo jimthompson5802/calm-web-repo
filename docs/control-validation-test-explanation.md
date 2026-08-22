@@ -2,19 +2,19 @@
 
 This document explains why `calm validate` succeeds for the first two nodes in [`architectures/control-test-architecture.json`](../static/architectures/control-test-architecture.json) and fails for the third node, and how the new pattern-based validation also catches the fourth node that omits its controls section.
 
-Repository assets are now served only through authenticated `https://my-arch.repo:8443`. The example URLs below use that HTTPS origin; auth-aware CLI execution is deferred to a later follow-up.
+Repository assets are now served only through authenticated `https://my-calm.repo:8443`. The example URLs below use that HTTPS origin; auth-aware CLI execution is deferred to a later follow-up.
 
 ## `calm validate` output for validating the architecture
 
 ### Validation without the pattern
 
 ```
-$ calm validate -a https://my-arch.repo:8443/architectures/control-test-architecture.json 
+$ calm validate -a https://my-calm.repo:8443/architectures/control-test-architecture.json 
 (node:65626) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-calm.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-calm.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [
@@ -43,12 +43,12 @@ info [calm-validate]:     Formatting output as json
 ### Validation with the control pattern
 
 ```
-$ calm validate -a https://my-arch.repo:8443/architectures/control-test-architecture.json -p https://my-arch.repo:8443/patterns/company-control-pattern.json 
+$ calm validate -a https://my-calm.repo:8443/architectures/control-test-architecture.json -p https://my-calm.repo:8443/patterns/company-control-pattern.json 
 (node:4933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-info [calm-cli]:     Using CALMHub URL from config file: https://my-arch.repo:8443
+info [calm-cli]:     Using CALMHub URL from config file: https://my-calm.repo:8443
 info [calm-cli]:     Using allowed remote hosts from config file
-info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-arch.repo:8443
+info [calmhub-document-loader]:     Configuring CALMHub document loader with base URL: https://my-calm.repo:8443
 info [calm-validate]:     Formatting output as json
 {
     "jsonSchemaValidationOutputs": [
@@ -127,7 +127,7 @@ The first node uses an inline control config:
 		"description": "Session protection requirement defined with inline configuration",
 		"requirements": [
 			{
-				"requirement-url": "https://my-arch.repo:8443/controls/session/schemas/session-protection.json",
+				"requirement-url": "https://my-calm.repo:8443/controls/session/schemas/session-protection.json",
 				"config": {
 					"protection-level": "medium",
 					"idle-timeout-minutes": 20,
@@ -155,15 +155,15 @@ The second node references an approved control config URL:
 		"description": "Session protection requirement loaded from the shared config file",
 		"requirements": [
 			{
-				"requirement-url": "https://my-arch.repo:8443/controls/session/schemas/session-protection.json",
-				"config-url": "https://my-arch.repo:8443/controls/session/configs/session-config.json"
+				"requirement-url": "https://my-calm.repo:8443/controls/session/schemas/session-protection.json",
+				"config-url": "https://my-calm.repo:8443/controls/session/configs/session-config.json"
 			}
 		]
 	}
 }
 ```
 
-- [`config-url: https://my-arch.repo:8443/controls/session/configs/session-config.json`](../static/controls/session/configs/session-config.json)
+- [`config-url: https://my-calm.repo:8443/controls/session/configs/session-config.json`](../static/controls/session/configs/session-config.json)
 
 That config file contains valid values:
 
@@ -183,7 +183,7 @@ The third node uses an inline control config that violates the schema:
 		"description": "Session protection requirement loaded from the bad shared config file",
 		"requirements": [
 			{
-				"requirement-url": "https://my-arch.repo:8443/controls/session/schemas/session-protection.json",
+				"requirement-url": "https://my-calm.repo:8443/controls/session/schemas/session-protection.json",
 				"config": {
 					"protection-level": "extreme",
 					"idle-timeout-minutes": 0,

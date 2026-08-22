@@ -317,12 +317,12 @@ test("accepts configured hostname file URLs", async () => {
   const callbackHarness = createMockCallbackHarness();
   const stdout = createCaptureStream();
   const stderr = createCaptureStream();
-  const code = await runCli(["https://my-arch.repo:8443/architectures/calm-1.json"], {
+  const code = await runCli(["https://my-calm.repo:8443/architectures/calm-1.json"], {
     browserOpener: async () => {
       throw new Error("browser unavailable");
     },
     callbackServerFactory: callbackHarness.callbackServerFactory,
-    stackOrigin: "https://my-arch.repo:8443",
+    stackOrigin: "https://my-calm.repo:8443",
     stderr,
     stdout,
   });
