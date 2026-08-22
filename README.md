@@ -54,7 +54,7 @@ The `make` startup targets do more than launch the local web stack variants. The
 - `uv`
 - Node.js (LTS recommended)
 - npm
-- A local hosts-file entry such as `127.0.0.1 my-calm.repo`
+- A local hosts-file entry, e.g., in `/etc/hosts` on MacOS, such as `127.0.0.1 my-calm.repo`
 
 ## Commands
 
