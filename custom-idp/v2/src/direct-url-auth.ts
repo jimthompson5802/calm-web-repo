@@ -1,9 +1,17 @@
-import { readFile } from 'fs/promises';
+import * as http from 'node:http';
+import * as https from 'node:https';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, resolve } from 'node:path';
 
 type AuthConfig = {
     tokenUrl: string;
     clientId: string;
     clientSecret: string;
+    caCertPath?: string;
+};
+
+type LoadedAuthConfig = AuthConfig & {
+    caCert?: string;
 };
 
 type TokenResponse = {
@@ -17,7 +25,7 @@ type CachedToken = {
 };
 
 export default class DirectUrlAuthPlugin {
-    private readonly configPromise: Promise<AuthConfig>;
+    private readonly configPromise: Promise<LoadedAuthConfig>;
     private cachedToken?: CachedToken;
 
     constructor(configPath?: string) {
@@ -25,14 +33,33 @@ export default class DirectUrlAuthPlugin {
             throw new Error('configPath is required');
         }
 
-        this.configPromise = readFile(configPath, 'utf8').then((text: string) =>
-            JSON.parse(text) as AuthConfig
-        );
+        this.configPromise = readFile(configPath, 'utf8').then(async (text: string) => {
+            const config = JSON.parse(text) as AuthConfig;
+            if (!config.caCertPath) {
+                return config;
+            }
+
+            const certPath = isAbsolute(config.caCertPath)
+                ? config.caCertPath
+                : resolve(dirname(configPath), config.caCertPath);
+
+            return {
+                ...config,
+                caCert: await readFile(certPath, 'utf8'),
+            };
+        });
     }
 
     async getAuthHeaders(_url: string, _requestBody: unknown): Promise<Record<string, string>> {
         return {
             Authorization: `Bearer ${await this.getAccessToken()}`
+        };
+    }
+
+    async getTlsConfig(): Promise<{ httpsCaCert?: string }> {
+        const config = await this.configPromise;
+        return {
+            httpsCaCert: config.caCert,
         };
     }
 
@@ -47,20 +74,7 @@ export default class DirectUrlAuthPlugin {
         body.set('client_secret', config.clientSecret);
         body.set('grant_type', 'client_credentials');
 
-        const response = await fetch(config.tokenUrl, {
-            method: 'POST',
-            headers: {
-                accept: 'application/json',
-                'content-type': 'application/x-www-form-urlencoded'
-            },
-            body
-        });
-
-        if (!response.ok) {
-            throw new Error(`Token request failed: ${response.status} ${response.statusText}`.trim());
-        }
-
-        const tokenResponse = (await response.json()) as TokenResponse;
+        const tokenResponse = await this.requestToken(config, body);
 
         if (!tokenResponse.access_token) {
             throw new Error('No access_token in token response');
@@ -73,5 +87,51 @@ export default class DirectUrlAuthPlugin {
         };
 
         return this.cachedToken.accessToken;
+    }
+
+    private async requestToken(config: LoadedAuthConfig, body: URLSearchParams): Promise<TokenResponse> {
+        const tokenUrl = new URL(config.tokenUrl);
+        const requestBody = body.toString();
+        const transport = tokenUrl.protocol === 'https:' ? https : http;
+
+        if (tokenUrl.protocol !== 'https:' && tokenUrl.protocol !== 'http:') {
+            throw new Error(`Unsupported token URL protocol: ${tokenUrl.protocol}`);
+        }
+
+        return await new Promise<TokenResponse>((resolvePromise, rejectPromise) => {
+            const request = transport.request(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    accept: 'application/json',
+                    'content-type': 'application/x-www-form-urlencoded',
+                    'content-length': Buffer.byteLength(requestBody).toString(),
+                },
+                ca: tokenUrl.protocol === 'https:' ? config.caCert : undefined,
+            }, (response) => {
+                let responseBody = '';
+                response.setEncoding('utf8');
+                response.on('data', (chunk: string) => {
+                    responseBody += chunk;
+                });
+                response.on('end', () => {
+                    if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
+                        rejectPromise(new Error(`Token request failed: ${response.statusCode ?? 'unknown'} ${response.statusMessage ?? ''}`.trim()));
+                        return;
+                    }
+
+                    try {
+                        resolvePromise(JSON.parse(responseBody) as TokenResponse);
+                    } catch (error) {
+                        rejectPromise(error);
+                    }
+                });
+            });
+
+            request.on('error', (error) => {
+                rejectPromise(new Error(`Token request failed: ${error.message}`));
+            });
+            request.write(requestBody);
+            request.end();
+        });
     }
 }

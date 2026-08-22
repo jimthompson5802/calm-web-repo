@@ -31,6 +31,7 @@ def main() -> int:
     env_path = repo_root / ".env"
     output_dir = repo_root / "custom-idp" / "v2" / "generated"
     output_path = output_dir / "direct-url-auth.json"
+    cert_path = repo_root / "infra" / "nginx" / "certs" / "localhost.crt"
 
     if not env_path.exists():
         raise SystemExit(
@@ -56,6 +57,7 @@ def main() -> int:
                 "tokenUrl": token_url,
                 "clientId": "calm-direct-url",
                 "clientSecret": env["KEYCLOAK_DIRECT_URL_CLIENT_SECRET"],
+                "caCertPath": str(cert_path),
             },
             indent=2,
         )

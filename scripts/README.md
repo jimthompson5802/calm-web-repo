@@ -6,7 +6,7 @@ Helper scripts for the local `setup-keycloak-web` stack.
 
 After `make start-web-server`, you can test the local Keycloak machine client and the protected static content without CALM CLI.
 
-Make sure your local `.env` contains `KEYCLOAK_DIRECT_URL_CLIENT_SECRET` and `CA_CERT_FILE_PATH`, then run:
+Make sure your local `.env` contains `KEYCLOAK_DIRECT_URL_CLIENT_SECRET` and `CA_CERT_FILE_PATH` and export the same values in your current shell, then run:
 
 ```sh
 TOKEN_RESPONSE="$(curl --silent --show-error \

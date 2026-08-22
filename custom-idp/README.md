@@ -64,7 +64,7 @@ For this stack, point `~/.calm.json` at the built `v2` JavaScript file and the g
 }
 ```
 
-The generated config contains the local token endpoint, `clientId` (`calm-direct-url`), and the machine-client secret from your local `.env`.
+The generated config contains the local token endpoint, `clientId` (`calm-direct-url`), the machine-client secret from your local `.env`, and the local CA certificate path used to trust the self-signed HTTPS token endpoint.
 
 ## Contract
 
@@ -73,3 +73,4 @@ The module:
 - default-exports a class
 - accepts `configPath?: string` in the constructor
 - implements `getAuthHeaders(url, requestBody)`
+- may optionally implement `getTlsConfig()` to provide TLS trust material for the protected direct-URL fetch itself

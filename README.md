@@ -164,6 +164,8 @@ Point `~/.calm.json` at the built module and the generated local config:
 }
 ```
 
+The generated direct URL auth config includes the local CA certificate path, so `calm validate` can authenticate to the self-signed local HTTPS stack without separately setting `NODE_EXTRA_CA_CERTS`.
+
 Then protected documents can be fetched non-interactively, for example:
 
 ```sh
