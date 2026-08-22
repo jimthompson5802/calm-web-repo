@@ -151,6 +151,8 @@ If you need a machine-client secret for the local Keycloak `calm-direct-url` cli
 openssl rand -hex 24
 ```
 
+Only `KEYCLOAK_DIRECT_URL_CLIENT_SECRET` feeds the generated direct-URL auth config used by the CALM CLI machine client. The other variables above are still required for the full local auth-enabled stack, but they are not part of the direct-URL auth config contract.
+
 ### CALM CLI direct URL auth
 
 Build the supported local cert-based auth module after starting `make start-webserver-authcerts`:
@@ -181,7 +183,30 @@ For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built
 }
 ```
 
+The generated direct URL auth config is intentionally minimal and supports only OAuth 2.0 client credentials plus optional TLS trust for private or self-signed certificates:
+
+```json
+{
+  "tokenUrl": "https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token",
+  "clientId": "calm-direct-url",
+  "clientSecret": "<secret>",
+  "caCertPath": "/absolute/path/to/localhost.crt"
+}
+```
+
+Required keys:
+
+- `tokenUrl`
+- `clientId`
+- `clientSecret`
+
+Optional key:
+
+- `caCertPath` when the token endpoint or protected direct URL uses a private or self-signed CA
+
 The generated direct URL auth config includes the local CA certificate path, so `calm validate` can authenticate to the self-signed local HTTPS stack without separately setting `NODE_EXTRA_CA_CERTS`.
+
+The direct URL auth config does not support or require `baseUrl`, `realm`, `clientSecretEnvVar`, `audience`, `scopes`, PKCE fields, redirect URLs, or test-user/admin credentials.
 
 Then protected documents can be fetched non-interactively, for example:
 

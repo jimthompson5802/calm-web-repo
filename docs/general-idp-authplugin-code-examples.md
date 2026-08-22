@@ -8,9 +8,10 @@ that can supply the authentication information needed for a protected direct URL
 request, and the direct URL loading path adds that information to the outbound
 request before sending it.
 
-These examples are illustrative. They show one possible way to structure the
-organization module and the request augmentation step, but they are not meant
-to freeze final package names or exact product APIs.
+These examples are illustrative, but for this repository the supported
+machine-to-machine configuration is intentionally minimal: `tokenUrl`,
+`clientId`, `clientSecret`, and optional `caCertPath` for private or
+self-signed CA trust.
 
 ## 1) Example: organization-provided auth module
 
@@ -26,13 +27,10 @@ export type DirectUrlAuthContext = {
 };
 
 export type AcmeDirectUrlAuthModuleOptions = {
-  baseUrl: string;
-  realm: string;
+  tokenUrl: string;
   clientId: string;
-  clientSecret?: string;
-  clientSecretEnvVar?: string;
-  audience?: string;
-  scopes?: string[];
+  clientSecret: string;
+  caCertPath?: string;
 };
 
 type CachedToken = {
@@ -48,23 +46,17 @@ type TokenResponse = {
 export default class AcmeDirectUrlAuthModule {
   private readonly tokenUrl: string;
   private readonly clientId: string;
-  private readonly clientSecret?: string;
-  private readonly audience?: string;
-  private readonly scopes: string[];
+  private readonly clientSecret: string;
   private cachedToken?: CachedToken;
 
   constructor(options: AcmeDirectUrlAuthModuleOptions) {
-    if (!options.baseUrl) throw new Error("baseUrl is required");
-    if (!options.realm) throw new Error("realm is required");
+    if (!options.tokenUrl) throw new Error("tokenUrl is required");
     if (!options.clientId) throw new Error("clientId is required");
+    if (!options.clientSecret) throw new Error("clientSecret is required");
 
-    const baseUrl = options.baseUrl.replace(/\/+$/, "");
-    this.tokenUrl =
-      `${baseUrl}/realms/${encodeURIComponent(options.realm)}/protocol/openid-connect/token`;
+    this.tokenUrl = options.tokenUrl;
     this.clientId = options.clientId;
-    this.clientSecret = this.resolveSecret(options);
-    this.audience = options.audience;
-    this.scopes = options.scopes ?? [];
+    this.clientSecret = options.clientSecret;
   }
 
   async getAuthHeaders(
@@ -85,18 +77,7 @@ export default class AcmeDirectUrlAuthModule {
     const body = new URLSearchParams();
     body.set("grant_type", "client_credentials");
     body.set("client_id", this.clientId);
-
-    if (this.clientSecret) {
-      body.set("client_secret", this.clientSecret);
-    }
-
-    if (this.audience) {
-      body.set("audience", this.audience);
-    }
-
-    if (this.scopes.length > 0) {
-      body.set("scope", this.scopes.join(" "));
-    }
+    body.set("client_secret", this.clientSecret);
 
     const response = await fetch(this.tokenUrl, {
       method: "POST",
@@ -127,26 +108,6 @@ export default class AcmeDirectUrlAuthModule {
     };
 
     return this.cachedToken.accessToken;
-  }
-
-  private resolveSecret(
-    options: AcmeDirectUrlAuthModuleOptions
-  ): string | undefined {
-    if (options.clientSecret) {
-      return options.clientSecret;
-    }
-
-    if (options.clientSecretEnvVar) {
-      const value = process.env[options.clientSecretEnvVar];
-      if (!value) {
-        throw new Error(
-          `Environment variable ${options.clientSecretEnvVar} is not set`
-        );
-      }
-      return value;
-    }
-
-    return undefined;
   }
 }
 ```
@@ -266,10 +227,10 @@ organization module and pass options into it.
   "directUrlAuth": {
     "module": "@acme/calm-direct-url-auth",
     "options": {
-      "baseUrl": "https://idp.acme.internal",
-      "realm": "acme-prod",
+      "tokenUrl": "https://idp.acme.internal/oauth/token",
       "clientId": "calm-cli",
-      "clientSecretEnvVar": "CALM_CLIENT_SECRET"
+      "clientSecret": "replace-me",
+      "caCertPath": "/absolute/path/to/idp-ca.crt"
     }
   }
 }
@@ -285,5 +246,7 @@ show only the following required behaviors:
 - The direct URL path asks that module for request-specific authentication
   data.
 - The request is augmented before it is sent.
+- The supported machine-to-machine config for this repo is limited to client
+  credentials plus optional CA trust.
 - Existing CALM Hub authentication is outside the scope of these examples and
   remains unchanged.

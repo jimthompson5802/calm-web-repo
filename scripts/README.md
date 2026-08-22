@@ -6,7 +6,14 @@ Helper scripts for the local `setup-keycloak-web` stack.
 
 After `make start-webserver-authcerts`, you can test the local Keycloak machine client and the protected static content without CALM CLI.
 
-Make sure your local `.env` contains `KEYCLOAK_DIRECT_URL_CLIENT_SECRET` and `CA_CERT_FILE_PATH` and export the same values in your current shell, then run:
+Make sure your local `.env` contains `KEYCLOAK_DIRECT_URL_CLIENT_SECRET`. For the curl examples below, set `CA_CERT_FILE_PATH` in your shell to the local certificate path used by curl to trust the self-signed HTTPS endpoint:
+
+```sh
+export CA_CERT_FILE_PATH="$(pwd)/infra/nginx/certs/localhost.crt"
+export KEYCLOAK_DIRECT_URL_CLIENT_SECRET="$(awk -F= '/^KEYCLOAK_DIRECT_URL_CLIENT_SECRET=/{print $2}' .env)"
+```
+
+Then run:
 
 ```sh
 TOKEN_RESPONSE="$(curl --silent --show-error \
@@ -27,6 +34,13 @@ curl --fail --silent --show-error \
 ```
 
 This flow relies on the local stack accepting the `calm-direct-url` service-account token at the proxy layer. Without a bearer token, the same file request should still be rejected.
+
+The direct-url auth config used by the supported CLI module remains minimal:
+
+- `tokenUrl`
+- `clientId`
+- `clientSecret`
+- optional `caCertPath`
 
 You can then fetch a protected file with that bearer token:
 

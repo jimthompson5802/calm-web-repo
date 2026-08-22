@@ -174,37 +174,6 @@ sequenceDiagram
     IAP-->>Loader: { Authorization: "Bearer <token>" }
 ```
 
-#### Authorization Code + PKCE (RFC 7636)
-
-```mermaid
-sequenceDiagram
-    participant Loader as Document Loader
-    participant IAP as IdpAuthPlugin
-    participant PC as AcmeInhouseIdpClient
-    participant Browser as System Browser
-    participant LS as Local Redirect Server (localhost)
-    participant IDP as Authorization Server
-
-    Loader->>IAP: getAuthHeaders(url, body)
-    IAP->>PC: getAccessToken()
-    alt token cached and not expiring
-        PC-->>IAP: cached access token
-    else first run or token expired
-        PC->>PC: generate code_verifier + code_challenge (S256)
-        PC->>LS: start HTTP listener on redirectPort
-        PC->>Browser: open authorizationUrl?code_challenge=...
-        Browser->>IDP: user authenticates
-        IDP->>LS: GET /callback?code=<auth_code>
-        LS-->>PC: auth_code
-        PC->>LS: shut down listener
-        PC->>IDP: POST /token\n(authorization_code + code_verifier)
-        IDP-->>PC: { access_token, expires_in }
-        PC->>PC: cache token + expiry
-        PC-->>IAP: access token
-    end
-    IAP-->>Loader: { Authorization: "Bearer <token>" }
-```
-
 ---
 
 ### Auth Resolution in the CLI
@@ -353,13 +322,14 @@ existing CALM Hub path.
 
 ### Configuration Reference
 
-The example below is illustrative only. It is not prescriptive of the final
-configuration design, naming, or protocol choices; it exists to show one
-possible way the direct URL auth hook could be expressed in a real config file.
+For `calm-web-repo`, the supported direct-URL configuration is intentionally
+minimal. It uses a module plus a config file whose machine-to-machine auth
+content is limited to `tokenUrl`, `clientId`, `clientSecret`, and optional
+`caCertPath`.
 
-An illustrative example of the configuration shape looks like this, showing
-how the CLI can be told where the end-user organization module is located so
-it can provide authentication information for the direct URL loader:
+An example of the configuration shape looks like this, showing how the CLI can
+be told where the organization module is located so it can provide
+authentication information for the direct URL loader:
 
 ```json
 {
@@ -369,22 +339,17 @@ it can provide authentication information for the direct URL loader:
     "options": {
       "tokenUrl": "https://idp.acme.example.com/oauth/token",
       "clientId": "calm-direct-url",
-      "clientSecret": "${ACME_IDP_CLIENT_SECRET}",
-      "scopes": ["calm:read", "calm:documents"],
-      "headerName": "Authorization",
-      "headerPrefix": "Bearer "
+      "clientSecret": "replace-me",
+      "caCertPath": "/absolute/path/to/idp-ca.crt"
     }
   }
 }
 ```
 
-This example is intentionally illustrative: the direct URL path resolves a
-module located by the organization for protected fetches, while the existing
-`authPluginPath` setting remains available for the unchanged CALM Hub behavior.
-The actual config shape and naming can vary by implementation, but the required
-behavior is the same: the CLI resolves the direct URL auth module, the loader
-calls it for the request being made, and the returned headers are added before
-the fetch is sent.
+This example keeps the direct URL auth input limited to the minimum needed for
+client credentials and TLS trust. The direct URL path resolves a module located
+by the organization for protected fetches, while the existing `authPluginPath`
+setting remains available for the unchanged CALM Hub behavior.
 
 ---
 
