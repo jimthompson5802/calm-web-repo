@@ -59,6 +59,13 @@
           "port": 8080
         }
       ]
+    },
+    {
+      "unique-id": "docker-compose-container",
+      "node-type": "container",
+      "name": "Docker Compose",
+      "description": "A container grouping representing the docker-compose runtime started by the noauth target.",
+      "environment": "local-development"
     }
   ],
   "relationships": [
@@ -153,6 +160,22 @@
           "destination": {
             "node": "nginx-static-server"
           }
+        }
+      }
+    },
+    {
+      "unique-id": "docker-compose-noauth-composed-of",
+      "description": "The noauth docker-compose startup groups the nginx service together with the mounted static content and nginx configuration used by that service.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "composed-of": {
+          "container": "docker-compose-container",
+          "nodes": [
+            "nginx-static-server",
+            "repository-static-content-http",
+            "noauth-nginx-config"
+          ]
         }
       }
     }

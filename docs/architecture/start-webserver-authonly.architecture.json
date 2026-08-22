@@ -40,10 +40,10 @@
       "environment": "local-development"
     },
     {
-      "unique-id": "pyweb-container",
+      "unique-id": "docker-compose-container",
       "node-type": "container",
-      "name": "Pyweb Compose Container",
-      "description": "A container grouping representing the Compose-managed pyweb runtime that serves local repository assets in authonly mode.",
+      "name": "Docker Compose",
+      "description": "A container grouping representing the docker-compose runtime started by the authonly target.",
       "environment": "local-development"
     },
     {
@@ -127,16 +127,17 @@
       }
     },
     {
-      "unique-id": "pyweb-container-composed-of",
-      "description": "The authonly Compose runtime groups the pyweb static server and the mounted static_http content tree used for local serving.",
+      "unique-id": "docker-compose-authonly-composed-of",
+      "description": "The authonly docker-compose startup groups the pyweb service together with the mounted static content and the simple auth contract enforced by that service.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
         "composed-of": {
-          "container": "pyweb-container",
+          "container": "docker-compose-container",
           "nodes": [
             "pyweb-service",
-            "repository-static-content-http"
+            "repository-static-content-http",
+            "simple-auth-contract"
           ]
         }
       }

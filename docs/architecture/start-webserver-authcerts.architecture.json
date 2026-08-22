@@ -101,6 +101,13 @@
           "port": 8080
         }
       ]
+    },
+    {
+      "unique-id": "docker-compose-container",
+      "node-type": "container",
+      "name": "Docker Compose",
+      "description": "A container grouping representing the docker-compose runtime started by the cert-based auth target.",
+      "environment": "local-development"
     }
   ],
   "relationships": [
@@ -323,6 +330,25 @@
           "destination": {
             "node": "nginx-static-server"
           }
+        }
+      }
+    },
+    {
+      "unique-id": "docker-compose-authcerts-composed-of",
+      "description": "The cert-based auth docker-compose startup groups the started services together with the mounted and generated data assets those services use for HTTPS serving, OIDC auth, and static content delivery.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "composed-of": {
+          "container": "docker-compose-container",
+          "nodes": [
+            "keycloak-service",
+            "oauth2-proxy-service",
+            "nginx-static-server",
+            "repository-static-content-authcerts",
+            "tls-certificate-assets",
+            "keycloak-realm-import"
+          ]
         }
       }
     }
