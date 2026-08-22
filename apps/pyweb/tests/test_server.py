@@ -193,7 +193,7 @@ def test_parse_args_allows_static_root_override(tmp_path: Path) -> None:
     assert config.static_root == static_root.resolve()
 
 
-def test_default_static_root_uses_repo_static_authonly_tree() -> None:
+def test_default_static_root_uses_repo_static_http_tree() -> None:
     assert default_static_root() == Path(__file__).resolve().parents[3] / DEFAULT_STATIC_DIR_NAME
 
 

@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlsplit
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8080
-DEFAULT_STATIC_DIR_NAME = "static_authonly"
+DEFAULT_STATIC_DIR_NAME = "static_http"
 SIMPLE_AUTH_HEADER = "Authorization"
 SIMPLE_AUTH_VALUE = "XYZ"
 

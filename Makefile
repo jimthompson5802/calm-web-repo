@@ -23,13 +23,13 @@ start-webserver-noauth:
 		export CALM_PUBLIC_HOST="$$host"; \
 		echo "Using local stack host: $$host"; \
 		$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmnoauth.json" _prepare-calm-config; \
-		CALM_STATIC_CONTENT_PATH=./static_noauth CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose up -d --no-deps nginx
+		CALM_STATIC_CONTENT_PATH=./static_http CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose up -d --no-deps nginx
 
 
 # start the authonly Python web server using the authonly static tree
 start-webserver-authonly:
 	@$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthonly.json" _prepare-calm-config
-	CALM_STATIC_CONTENT_PATH=./static_authonly docker-compose up -d --no-deps pyweb
+	CALM_STATIC_CONTENT_PATH=./static_http docker-compose up -d --no-deps pyweb
 
 
 # start the full auth stack using the authcerts static tree

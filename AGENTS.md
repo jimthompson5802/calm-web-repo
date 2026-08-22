@@ -8,7 +8,7 @@
 - `/healthz` is the anonymous operational endpoint.
 - `/keycloak/` is exposed for the local auth and admin flow.
 - `/api` is reserved for future reverse proxying.
-- CALM model files live under `static_noauth/`, `static_authonly/`, and `static_authcerts/`, and the selected tree is mounted directly into the serving container for the chosen startup mode.
+- CALM model files live under `static_http/` and `static_authcerts/`, and the selected tree is mounted directly into the serving container for the chosen startup mode.
 
 ## Layout
 

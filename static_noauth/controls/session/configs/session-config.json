@@ -1,6 +1,0 @@
-{
-  "$schema": "https://schemas.example.com/calm/control-config.json",
-  "protection-level": "high",
-  "idle-timeout-minutes": 15,
-  "encryption-required": true
-}

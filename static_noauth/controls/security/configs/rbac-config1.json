@@ -1,7 +1,0 @@
-{
-    "$schema": "https://schemas.company.com/security/rbac-requirement.json",
-    "model": "RBAC",
-    "mfa-required": true,
-    "session-timeout-minutes": 30,
-    "privileged-access-review-days": 90
-}

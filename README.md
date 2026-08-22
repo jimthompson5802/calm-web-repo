@@ -20,7 +20,7 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 ## Layout
 
-- `static_noauth/`, `static_authonly/`, and `static_authcerts/` hold the source CALM static trees used by the three web-server startup modes.
+- `static_http/` and `static_authcerts/` hold the source CALM static trees used by the local web-server startup modes.
 - Each static tree contains `architectures/`, `patterns/`, `standards/`, and `controls/` content.
 - `apps/api/` holds the Python service scaffold (FUTURE WORK).
 - `apps/web/` holds the TypeScript web scaffold (FUTURE WORK).
@@ -41,8 +41,8 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 ## Commands
 
 - `make bootstrap` shows dependency install commands.
-- `make start-webserver-noauth` mounts `static_noauth/` directly into `nginx` and starts it on `http://<host>:8080`.
-- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_authonly/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://127.0.0.1:8080`.
+- `make start-webserver-noauth` mounts `static_http/` directly into `nginx` and starts it on `http://<host>:8080`.
+- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://127.0.0.1:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 - `make test-api` runs the Python API tests.
@@ -58,7 +58,7 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 ## Control Authoring Note
 
-- The tracked CALM source files under each `static_*` tree are mounted directly into the serving container for the corresponding startup target.
+- The tracked CALM source files under `static_http/` and `static_authcerts/` are mounted directly into the serving container for the corresponding startup target.
 - Some tracked JSON files still use `https://localhost:8443/...` placeholders. The startup flow does not rewrite those URLs during serving.
 - Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
 - Keep control configs in `static_*/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
@@ -136,16 +136,16 @@ make start-webserver-authcerts
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
 - repoint `~/.calm.json` to `~/.calmnoauth.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
-- mount `static_noauth/` directly into `nginx`
+- mount `static_http/` directly into `nginx`
 - start only `nginx` with the noauth nginx config and `8080:8080` port publishing
 - serve repository content over `http://<host>:8080` without `keycloak` or `oauth2-proxy`
 
 `make start-webserver-authonly` will:
 
 - repoint `~/.calm.json` to `~/.calmauthonly.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
-- mount `static_authonly/` directly into the `pyweb` container
+- mount `static_http/` directly into the `pyweb` container
 - build and start the `pyweb` Compose service in detached mode
-- serve repository content from `static_authonly/` through `http://127.0.0.1:8080`
+- serve repository content from `static_http/` through `http://127.0.0.1:8080`
 - require `Authorization: XYZ` for static `GET` and `HEAD` requests
 
 `make start-webserver-authcerts` will:

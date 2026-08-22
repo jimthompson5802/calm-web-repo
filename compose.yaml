@@ -6,7 +6,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ${CALM_STATIC_CONTENT_PATH:-./static_authonly}:/srv/static:ro
+      - ${CALM_STATIC_CONTENT_PATH:-./static_http}:/srv/static:ro
     restart: unless-stopped
   nginx:
     image: nginx:1.29-alpine
@@ -18,7 +18,7 @@ services:
     volumes:
       - ${CALM_NGINX_CONF_PATH:-./infra/nginx/nginx.conf}:/etc/nginx/conf.d/default.conf:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
-      - ${CALM_STATIC_CONTENT_PATH:-./static_authonly}:/usr/share/nginx/html:ro
+      - ${CALM_STATIC_CONTENT_PATH:-./static_http}:/usr/share/nginx/html:ro
     networks:
       default:
         aliases:
