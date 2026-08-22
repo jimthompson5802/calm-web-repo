@@ -1,10 +1,4 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts stop-webserver bootstrap test-api typecheck-web _prepare-rendered-static _prepare-calm-config
-
-_prepare-rendered-static:
-	@test -n "$(STATIC_SOURCE)"
-	rm -rf infra/nginx/rendered-static
-	mkdir -p infra/nginx/rendered-static
-	cp -R "$(STATIC_SOURCE)"/. infra/nginx/rendered-static
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts stop-webserver bootstrap test-api typecheck-web _prepare-calm-config
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
@@ -29,15 +23,13 @@ start-webserver-noauth:
 		export CALM_PUBLIC_HOST="$$host"; \
 		echo "Using local stack host: $$host"; \
 		$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmnoauth.json" _prepare-calm-config; \
-		$(MAKE) STATIC_SOURCE=static_noauth _prepare-rendered-static; \
-		CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose up -d --no-deps nginx
+		CALM_STATIC_CONTENT_PATH=./static_noauth CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose up -d --no-deps nginx
 
 
 # start the authonly Python web server using the authonly static tree
 start-webserver-authonly:
 	@$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthonly.json" _prepare-calm-config
-	@$(MAKE) STATIC_SOURCE=static_authonly _prepare-rendered-static
-	docker-compose up -d --no-deps pyweb
+	CALM_STATIC_CONTENT_PATH=./static_authonly docker-compose up -d --no-deps pyweb
 
 
 # start the full auth stack using the authcerts static tree
@@ -49,8 +41,7 @@ start-webserver-authcerts:
 		./scripts/generate-local-certs.sh; \
 		./scripts/render-keycloak-realm.py; \
 		./scripts/render-direct-url-auth-config.py; \
-		$(MAKE) STATIC_SOURCE=static_authcerts _prepare-rendered-static; \
-		docker-compose up -d keycloak oauth2-proxy nginx
+		CALM_STATIC_CONTENT_PATH=./static_authcerts docker-compose up -d keycloak oauth2-proxy nginx
 
 
 # stop the nginx server and remove compose resources

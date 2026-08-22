@@ -12,10 +12,10 @@ Run these commands from the repository root unless noted otherwise:
 uv sync --project apps/pyweb                         # Install the project plus dev dependencies
 uv run --project apps/pyweb pyweb                    # Start the server with the default host and port
 uv run --project apps/pyweb pyweb --simple-auth      # Start the server with simple header-based auth enabled
-uv run --project apps/pyweb pyweb --static-root infra/nginx/rendered-static
+uv run --project apps/pyweb pyweb --static-root static_authonly
 uv run --project apps/pyweb pyweb --host 127.0.0.1 --port 8081  # Start the server with explicit bind settings
-docker-compose up -d pyweb                           # Start the containerized authonly service after preparing rendered-static
-make start-webserver-authonly                        # Repoint ~/.calm.json, copy static_authonly into rendered-static, and start pyweb in Compose
+CALM_STATIC_CONTENT_PATH=./static_authonly docker-compose up -d pyweb
+make start-webserver-authonly                        # Repoint ~/.calm.json, mount static_authonly in Compose, and start pyweb
 make stop-webserver                                  # Stop the Compose-managed authonly service and any other running stack services
 uv run --project apps/pyweb pytest                   # Run the pyweb test suite
 uv run --project apps/pyweb mypy                     # Run static type checking
@@ -72,6 +72,6 @@ curl -i -H 'Authorization: wrong' http://127.0.0.1:8080/architectures/calm-1.jso
 - Default host: `127.0.0.1`
 - Default port: `8080`
 - `--simple-auth` does not apply to `/health`
-- `make start-webserver-authonly` starts the Compose-managed `pyweb` service in detached mode using `infra/nginx/rendered-static`
+- `make start-webserver-authonly` starts the Compose-managed `pyweb` service in detached mode using `static_authonly/`
 - Stop the authonly service with `make stop-webserver`
 - The repo's nginx/docker startup targets are `make start-webserver-noauth` and `make start-webserver-authcerts`

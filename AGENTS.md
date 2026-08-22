@@ -3,12 +3,12 @@
 ## Scope
 
 - Nginx is static-first for repo content in the current local stack.
-- Static content can be served through the foreground `apps/pyweb` authonly mode, through authenticated HTTPS backed by Keycloak, or through a noauth HTTP nginx-only mode on port `8080`.
+- Static content can be served through the Compose-managed `apps/pyweb` authonly mode, through authenticated HTTPS backed by Keycloak, or through a noauth HTTP nginx-only mode on port `8080`.
 - `oauth2-proxy` sits in front of normal content requests in the cert-based auth mode.
 - `/healthz` is the anonymous operational endpoint.
 - `/keycloak/` is exposed for the local auth and admin flow.
 - `/api` is reserved for future reverse proxying.
-- CALM model files live under `static_noauth/`, `static_authonly/`, and `static_authcerts/`, and the selected tree is copied into the served static directory for the chosen startup mode.
+- CALM model files live under `static_noauth/`, `static_authonly/`, and `static_authcerts/`, and the selected tree is mounted directly into the serving container for the chosen startup mode.
 
 ## Layout
 
@@ -28,7 +28,7 @@
 - `make start-webserver-noauth`
 - `make start-webserver-authonly`
 - `make start-webserver-authcerts`
-- `make stop-web-server`
+- `make stop-webserver`
 - `make bootstrap`
 - `make test-api`
 - `make typecheck-web`
