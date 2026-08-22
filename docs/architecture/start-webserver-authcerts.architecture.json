@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "start-webserver-authcerts-architecture",
   "name": "Start Webserver Authcerts Architecture",
-  "description": "Architecture for the make start-webserver-authcerts target, covering the HTTPS nginx, oauth2-proxy, and Keycloak stack, together with the generated certificates, realm import, direct-url-auth config, and CALM CLI config selection required for local bearer-token access.",
+  "description": "Architecture for the make start-webserver-authcerts target, covering the HTTPS nginx, oauth2-proxy, and Keycloak stack, together with the generated certificates and realm import required for local bearer-token access.",
   "nodes": [
     {
       "unique-id": "repository-user",
@@ -14,22 +14,8 @@
     {
       "unique-id": "public-host-detection-helper",
       "node-type": "service",
-      "name": "Public Host Detection Helper",
-      "description": "The scripts/detect_public_host.py helper that resolves the local host name or IP exported as CALM_PUBLIC_HOST before certificates, realm files, and the auth stack are generated and started.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "active-calm-config-link",
-      "node-type": "data-asset",
-      "name": "Active CALM CLI Config Link",
-      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls use the cert-based auth configuration.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "authcerts-calm-config",
-      "node-type": "data-asset",
-      "name": "Authcerts CALM CLI Config",
-      "description": "The ~/.calmauthcerts.json configuration file selected for local HTTPS serving and direct URL authentication against the self-signed local stack.",
+      "name": "CALM CLI",
+      "description": "The CALM CLI process invoked by the startup flow, including its use of scripts/detect_public_host.py to resolve the local host name or IP exported as CALM_PUBLIC_HOST before certificates, realm files, and the auth stack are generated and started.",
       "environment": "local-development"
     },
     {
@@ -44,13 +30,6 @@
       "node-type": "data-asset",
       "name": "Generated Keycloak Realm Import",
       "description": "The rendered Keycloak realm import generated from infra/keycloak/calm-local-realm.template.json, provisioning the calm-local realm, OAuth clients, and local test credentials for the auth stack.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "direct-url-auth-config",
-      "node-type": "data-asset",
-      "name": "Generated Direct URL Auth Config",
-      "description": "The generated custom-idp/v2/generated/direct-url-auth.json file that supplies the local machine-client auth configuration for CALM CLI direct URL loading against the authenticated HTTPS origin.",
       "environment": "local-development"
     },
     {
@@ -113,7 +92,7 @@
   "relationships": [
     {
       "unique-id": "user-to-host-helper",
-      "description": "Architects run the public host detection helper to discover which local host will be embedded into the generated auth-aware assets and HTTPS endpoint.",
+      "description": "Architects run the CALM CLI startup flow to discover which local host will be embedded into the generated auth-aware assets and HTTPS endpoint.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -127,7 +106,7 @@
     },
     {
       "unique-id": "host-helper-to-nginx",
-      "description": "The detected CALM_PUBLIC_HOST value informs the nginx startup flow and the HTTPS host presented to local clients.",
+      "description": "The CALM CLI supplies the detected CALM_PUBLIC_HOST value to the nginx startup flow and the HTTPS host presented to local clients.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -143,7 +122,7 @@
     },
     {
       "unique-id": "host-helper-to-keycloak-realm-import",
-      "description": "The detected host is injected into the generated Keycloak realm import so local issuer and redirect settings match the HTTPS origin.",
+      "description": "The CALM CLI injects the detected host into the generated Keycloak realm import so local issuer and redirect settings match the HTTPS origin.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -153,54 +132,6 @@
           },
           "destination": {
             "node": "keycloak-realm-import"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "host-helper-to-direct-url-auth-config",
-      "description": "The detected host is written into the generated direct URL auth configuration so CALM CLI machine-client requests target the correct local HTTPS origin.",
-      "dataClassification": "internal",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "public-host-detection-helper"
-          },
-          "destination": {
-            "node": "direct-url-auth-config"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "active-link-to-authcerts-config",
-      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmauthcerts.json before the authenticated HTTPS stack is started.",
-      "dataClassification": "internal",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "active-calm-config-link"
-          },
-          "destination": {
-            "node": "authcerts-calm-config"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "authcerts-config-to-direct-url-auth-config",
-      "description": "The selected CALM CLI config references the generated direct URL auth configuration so local machine-client validation can authenticate to the protected HTTPS origin.",
-      "dataClassification": "internal",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "authcerts-calm-config"
-          },
-          "destination": {
-            "node": "direct-url-auth-config"
           }
         }
       }
@@ -313,22 +244,6 @@
           },
           "destination": {
             "node": "keycloak-realm-import"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "user-to-nginx-authcerts",
-      "description": "Architects request repository content from nginx over authenticated HTTPS on port 8443 while the anonymous /healthz endpoint remains available for operational checks.",
-      "dataClassification": "internal",
-      "encrypted": true,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "repository-user"
-          },
-          "destination": {
-            "node": "nginx-static-server"
           }
         }
       }

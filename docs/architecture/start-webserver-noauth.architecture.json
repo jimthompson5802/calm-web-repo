@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "start-webserver-noauth-architecture",
   "name": "Start Webserver Noauth Architecture",
-  "description": "Architecture for the make start-webserver-noauth target, covering the nginx-only local static stack, the selected noauth CALM CLI configuration, and the setup helpers that prepare the HTTP endpoint on port 8080.",
+  "description": "Architecture for the make start-webserver-noauth target, covering the nginx-only local static stack and the setup helpers that prepare the HTTP endpoint on port 8080.",
   "nodes": [
     {
       "unique-id": "repository-user",
@@ -14,22 +14,8 @@
     {
       "unique-id": "public-host-detection-helper",
       "node-type": "service",
-      "name": "Public Host Detection Helper",
-      "description": "The scripts/detect_public_host.py helper that resolves the local host name or IP exported as CALM_PUBLIC_HOST before the noauth nginx container is started.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "active-calm-config-link",
-      "node-type": "data-asset",
-      "name": "Active CALM CLI Config Link",
-      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls point at the configuration required for the noauth stack.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "noauth-calm-config",
-      "node-type": "data-asset",
-      "name": "Noauth CALM CLI Config",
-      "description": "The ~/.calmnoauth.json configuration file selected by the target so local CALM CLI usage follows the noauth repository endpoint conventions.",
+      "name": "CALM CLI",
+      "description": "The CALM CLI process invoked by the startup flow, including its use of scripts/detect_public_host.py to resolve the local host name or IP exported as CALM_PUBLIC_HOST before the noauth nginx container is started.",
       "environment": "local-development"
     },
     {
@@ -71,7 +57,7 @@
   "relationships": [
     {
       "unique-id": "user-to-host-helper",
-      "description": "Architects run the public host detection helper to discover which local host the noauth startup flow will advertise before nginx is started.",
+      "description": "Architects run the CALM CLI startup flow to discover which local host will be advertised for the noauth endpoint before nginx is started.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -85,7 +71,7 @@
     },
     {
       "unique-id": "host-helper-to-nginx",
-      "description": "The detected CALM_PUBLIC_HOST value informs the nginx startup flow and the host narrative announced for the local HTTP endpoint.",
+      "description": "The CALM CLI supplies the detected CALM_PUBLIC_HOST value to the nginx startup flow and the host narrative announced for the local HTTP endpoint.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
@@ -95,22 +81,6 @@
           },
           "destination": {
             "node": "nginx-static-server"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "active-link-to-noauth-config",
-      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmnoauth.json before the noauth web server is started.",
-      "dataClassification": "internal",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "active-calm-config-link"
-          },
-          "destination": {
-            "node": "noauth-calm-config"
           }
         }
       }
@@ -143,22 +113,6 @@
           },
           "destination": {
             "node": "repository-static-content-http"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "user-to-nginx-noauth",
-      "description": "Architects request the repository's static site and CALM assets from nginx over anonymous HTTP on port 8080, while the /healthz endpoint remains open for operational checks.",
-      "dataClassification": "public",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "repository-user"
-          },
-          "destination": {
-            "node": "nginx-static-server"
           }
         }
       }

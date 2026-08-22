@@ -2,27 +2,20 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "start-webserver-authonly-architecture",
   "name": "Start Webserver Authonly Architecture",
-  "description": "Architecture for the make start-webserver-authonly target, covering the Compose-managed pyweb service, the simple Authorization: XYZ contract, and the CALM CLI config switch used for the local header-protected HTTP stack.",
+  "description": "Architecture for the make start-webserver-authonly target, covering the Compose-managed pyweb service and the simple Authorization: XYZ contract used for the local header-protected HTTP stack.",
   "nodes": [
     {
       "unique-id": "repository-user",
       "node-type": "actor",
       "name": "Architect",
-      "description": "A human architect or operator who starts the authonly local stack, updates the active CALM CLI config symlink, and requests repository assets through the header-protected Python web server.",
+      "description": "A human architect or operator who starts the authonly local stack and requests repository assets through the header-protected Python web server.",
       "environment": "local-development"
     },
     {
-      "unique-id": "active-calm-config-link",
-      "node-type": "data-asset",
-      "name": "Active CALM CLI Config Link",
-      "description": "The ~/.calm.json symlink that the startup target rewires so local CALM CLI calls use the authonly configuration.",
-      "environment": "local-development"
-    },
-    {
-      "unique-id": "authonly-calm-config",
-      "node-type": "data-asset",
-      "name": "Authonly CALM CLI Config",
-      "description": "The ~/.calmauthonly.json configuration file selected for local development against the authonly repository endpoint.",
+      "unique-id": "calm-cli",
+      "node-type": "service",
+      "name": "CALM CLI",
+      "description": "The CALM CLI process invoked by the authonly startup flow to prepare and announce the local endpoint before the Python web server is started.",
       "environment": "local-development"
     },
     {
@@ -63,17 +56,31 @@
   ],
   "relationships": [
     {
-      "unique-id": "active-link-to-authonly-config",
-      "description": "The startup target rewires ~/.calm.json so the active CALM CLI config points at ~/.calmauthonly.json before pyweb is launched.",
+      "unique-id": "user-to-calm-cli",
+      "description": "Architects run the CALM CLI startup flow to prepare the authonly local endpoint before pyweb is started.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": [
+            "calm-cli"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-pyweb",
+      "description": "The CALM CLI startup flow supplies the local endpoint details used to launch and announce the pyweb static web server.",
       "dataClassification": "internal",
       "encrypted": false,
       "relationship-type": {
         "connects": {
           "source": {
-            "node": "active-calm-config-link"
+            "node": "calm-cli"
           },
           "destination": {
-            "node": "authonly-calm-config"
+            "node": "pyweb-service"
           }
         }
       }
@@ -106,22 +113,6 @@
           },
           "destination": {
             "node": "simple-auth-contract"
-          }
-        }
-      }
-    },
-    {
-      "unique-id": "user-to-pyweb",
-      "description": "Architects request protected repository assets from pyweb over HTTP on 127.0.0.1:8080 and include Authorization: XYZ for static content access.",
-      "dataClassification": "internal",
-      "encrypted": false,
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "repository-user"
-          },
-          "destination": {
-            "node": "pyweb-service"
           }
         }
       }
