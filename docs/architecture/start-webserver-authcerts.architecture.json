@@ -105,8 +105,8 @@
     {
       "unique-id": "docker-compose-container",
       "node-type": "container",
-      "name": "Docker Compose",
-      "description": "A container grouping representing the docker-compose runtime started by the cert-based auth target.",
+      "name": "MY-CALM.REPO",
+      "description": "A container grouping representing the local MY-CALM.REPO runtime started by the cert-based auth target.",
       "environment": "local-development"
     }
   ],
