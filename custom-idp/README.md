@@ -5,7 +5,7 @@ This directory contains two minimal TypeScript examples of a `directUrlAuth.modu
 - [`v1/`](./v1/) builds the `direct-url-auth-v1` example
 - [`v2/`](./v2/) builds the `direct-url-auth-v2` example
 
-For the local `setup-keycloak-web` stack, `v2` is the supported module. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by `make start-web-server`.
+For the local `setup-keycloak-web` stack, `v2` is the supported module. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by `make start-webserver-authonly` or `make start-webserver-authcerts`.
 
 Each example has the same structure:
 

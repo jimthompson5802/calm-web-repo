@@ -1,0 +1,120 @@
+{
+    "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+    "unique-id": "control-test-architecture",
+    "name": "Control Test Architecture",
+    "description": "Test architecture that demonstrates session control requirements with inline and referenced configs",
+    "nodes": [
+        {
+            "unique-id": "session-inline-node",
+            "node-type": "service",
+            "name": "Session Inline Control Node",
+            "description": "Service node that defines the session protection control with an inline config",
+            "controls": {
+                "session-protection": {
+                    "description": "Session protection requirement defined with inline configuration",
+                    "requirements": [
+                        {
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
+                            "config": {
+                                "protection-level": "medium",
+                                "idle-timeout-minutes": 20,
+                                "encryption-required": true
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "unique-id": "session-config-node",
+            "node-type": "service",
+            "name": "Session Config Node",
+            "description": "Service node that uses the session protection control from the shared config file",
+            "controls": {
+                "session-protection": {
+                    "description": "Session protection requirement loaded from the shared config file",
+                    "requirements": [
+                        {
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
+                            "config-url": "https://localhost:8443/controls/session/configs/session-config.json"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "unique-id": "session-bad-config-node",
+            "node-type": "service",
+            "name": "Session Bad Config Node",
+            "description": "Service node that uses the session protection control from the invalid config setting",
+            "controls": {
+                "session-protection": {
+                    "description": "Session protection requirement loaded from the bad shared config file",
+                    "requirements": [
+                        {
+                            "requirement-url": "https://localhost:8443/controls/session/schemas/session-protection.json",
+                            "config": {
+                                "protection-level": "extreme",
+                                "idle-timeout-minutes": 0,
+                                "encryption-required": true
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "unique-id": "session-no-controls-node",
+            "node-type": "service",
+            "name": "Session No Controls Node",
+            "description": "Service node that intentionally has no controls section"
+        }
+    ],
+    "relationships": [
+        {
+            "unique-id": "session-inline-to-config",
+            "description": "Inline-config session node connects to the config-file session node",
+            "relationship-type": {
+                "connects": {
+                    "source": {
+                        "node": "session-inline-node"
+                    },
+                    "destination": {
+                        "node": "session-config-node"
+                    }
+                }
+            },
+            "protocol": "HTTPS"
+        },
+        {
+            "unique-id": "session-config-to-bad-config",
+            "description": "Session config node connects to the node using the invalid shared session config",
+            "relationship-type": {
+                "connects": {
+                    "source": {
+                        "node": "session-config-node"
+                    },
+                    "destination": {
+                        "node": "session-bad-config-node"
+                    }
+                }
+            },
+            "protocol": "HTTPS"
+        },
+        {
+            "unique-id": "session-bad-config-to-no-controls",
+            "description": "Session bad config node connects to the node without controls",
+            "relationship-type": {
+                "connects": {
+                    "source": {
+                        "node": "session-bad-config-node"
+                    },
+                    "destination": {
+                        "node": "session-no-controls-node"
+                    }
+                }
+            },
+            "protocol": "HTTPS"
+        }
+    ]
+}

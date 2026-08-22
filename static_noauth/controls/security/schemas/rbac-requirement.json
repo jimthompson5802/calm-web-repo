@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.company.com/security/rbac-requirement.json",
+    "title": "Role-Based Access Control Requirement",
+    "description": "Defines the required configuration for role-based access control (RBAC) across system components",
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "enum": ["RBAC", "ABAC", "DAC", "MAC"],
+            "description": "Access control model to enforce"
+        },
+        "mfa-required": {
+            "type": "boolean",
+            "description": "Whether multi-factor authentication is required for all users"
+        },
+        "session-timeout-minutes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 480,
+            "description": "Idle session timeout in minutes"
+        },
+        "privileged-access-review-days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Frequency of privileged access reviews in days"
+        }
+    },
+    "required": ["model", "mfa-required", "session-timeout-minutes", "privileged-access-review-days"]
+}

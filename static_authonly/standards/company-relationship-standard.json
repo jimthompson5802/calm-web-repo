@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/standards/company-relationship-standard.json",
+  "title": "Company Relationship Standard",
+  "allOf": [
+    { "$ref": "https://calm.finos.org/release/1.2/meta/core.json#/defs/relationship" },
+    {
+      "type": "object",
+      "properties": {
+        "dataClassification": {
+          "type": "string",
+          "enum": ["public", "internal", "confidential", "restricted"],
+          "description": "The sensitivity classification of data flowing across this relationship. Must be one of: public, internal, confidential, or restricted."
+        },
+        "encrypted": {
+          "type": "boolean",
+          "description": "Indicates whether the connection is encrypted in transit (e.g., via TLS). Must be true for confidential or restricted data classifications."
+        }
+      },
+      "required": ["dataClassification", "encrypted"]
+    }
+  ]
+}

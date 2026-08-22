@@ -1,0 +1,6 @@
+{
+    "$schema": "https://schemas.company.com/data/retention.json",
+    "retention-period": "7-years",
+    "archival-strategy": "cold-storage",
+    "deletion-on-expiry": true
+}

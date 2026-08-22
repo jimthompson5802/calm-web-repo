@@ -21,10 +21,10 @@ The script covers these scenarios:
 - The `calm` CLI must be installed and available on `PATH`.
 - The repository's static assets must be available under the expected paths such as `/architectures` and `/patterns`.
 
-Start the local static server with:
+Start an auth-enabled local static server with:
 
 ```sh
-make start-web-server
+make start-webserver-authonly
 ```
 
 The script still uses legacy unauthenticated URLs and is pending a separate auth-aware update. Do not treat it as the supported validation path for the current HTTPS-only stack.

@@ -1,12 +1,12 @@
 # CALM Artifact Access Testbed
 
-Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development serves repository content only over authenticated HTTPS backed by Keycloak, with an anonymous HTTPS health check for operational use.
+Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeScript application scaffolds for future API and UI work. Local development supports both authenticated HTTPS backed by Keycloak and a noauth HTTP mode for static-only serving, with an anonymous health check for operational use.
 
-Protected repository content is now bearer-token-only for normal access. The supported local automation path is CALM CLI direct URL loading with the `custom-idp/v2` client-credentials module against the bundled Keycloak realm.
+Protected repository content in the auth-enabled modes is bearer-token-only for normal access. The supported local automation path is CALM CLI direct URL loading with the `custom-idp/v2` client-credentials module against the bundled Keycloak realm.
 
 The local `calm-direct-url` machine client uses a Keycloak service-account token. The web stack is configured to accept that bearer token directly for protected static content.
 
-The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web-server` resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
+The canonical local stack origin is `https://my-arch.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed CALM Architecture
 [CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
@@ -20,10 +20,8 @@ The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web
 
 ## Layout
 
-- `static/architectures/` holds CALM architecture JSON files.
-- `static/patterns/` holds CALM pattern JSON files.
-- `static/standards/` holds CALM standard JSON files.
-- `static/controls/` holds CALM control requirement schemas and control configuration JSON files.
+- `static_noauth/`, `static_authonly/`, and `static_authcerts/` hold the source CALM static trees used by the three web-server startup modes.
+- Each static tree contains `architectures/`, `patterns/`, `standards/`, and `controls/` content.
 - `apps/api/` holds the Python service scaffold (FUTURE WORK).
 - `apps/web/` holds the TypeScript web scaffold (FUTURE WORK).
 - `infra/nginx/` holds the Nginx config and local TLS assets.
@@ -43,7 +41,9 @@ The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web
 ## Commands
 
 - `make bootstrap` shows dependency install commands.
-- `make start-web-server` generates local TLS/auth assets and starts the full web auth stack in detached mode.
+- `make start-webserver-noauth` copies `static_noauth/` into `infra/nginx/rendered-static/` and starts only `nginx` on `http://<host>:8080`.
+- `make start-webserver-authonly` generates local TLS/auth assets, copies `static_authonly/` into `infra/nginx/rendered-static/`, and starts the full auth stack in detached mode.
+- `make start-webserver-authcerts` generates local TLS/auth assets, copies `static_authcerts/` into `infra/nginx/rendered-static/`, and starts the full auth stack in detached mode.
 - `make stop-web-server` stops the Nginx service and removes the Compose resources.
 - `make test-api` runs the Python API tests.
 - `make typecheck-web` runs the TypeScript typecheck.
@@ -51,22 +51,23 @@ The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web
 ## Validation
 
 - `docker-compose config` validates Compose configuration.
+- `CALM_NGINX_CONF_PATH=./infra/nginx/nginx.noauth.conf CALM_NGINX_PORT_MAP=8080:8080 docker-compose config` validates the noauth nginx selection.
 - `make test-api` validates Python API behavior.
 - `make typecheck-web` validates TypeScript types.
 - `./scripts/validate-architecture.sh` is intentionally unchanged in this repo revision and still needs a follow-up update before it matches the authenticated HTTPS-only stack.
 
 ## Control Authoring Note
 
-- The tracked CALM source files under `static/` still use `https://localhost:8443/...` as a host-agnostic source placeholder.
-- `make start-web-server` renders a served copy under `infra/nginx/rendered-static/` and rewrites those absolute JSON URLs to `https://${CALM_PUBLIC_HOST}:8443/...` before nginx starts.
+- The tracked CALM source files under each `static_*` tree are copied literally into `infra/nginx/rendered-static/` by the corresponding startup target.
+- Some tracked JSON files still use `https://localhost:8443/...` placeholders. The startup flow no longer rewrites those URLs during copy.
 - Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
-- Keep control configs in `static/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
+- Keep control configs in `static_*/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
 
 ## Static Content
 
-Static content is available only through the authenticated HTTPS endpoint. Requests without a valid bearer token receive `401 Unauthorized`. The only anonymous endpoint exposed by the web server is `/healthz`.
+`make start-webserver-authonly` and `make start-webserver-authcerts` serve static content through the authenticated HTTPS endpoint. Requests without a valid bearer token receive `401 Unauthorized`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, `/healthz` remains anonymous.
 
-Sample authenticated URLs after `make start-web-server`:
+Sample URLs after auth-enabled startup targets:
 
 - `https://my-arch.repo:8443/`
 - `https://my-arch.repo:8443/architectures/calm-1.json`
@@ -78,9 +79,18 @@ Anonymous health check:
 
 - `https://my-arch.repo:8443/healthz`
 
-The Keycloak admin console uses the same HTTPS origin:
+In the auth-enabled modes, the Keycloak admin console uses the same HTTPS origin:
 
 - `https://my-arch.repo:8443/keycloak/admin/master/console/`
+
+Sample URLs after `make start-webserver-noauth`:
+
+- `http://my-arch.repo:8080/`
+- `http://my-arch.repo:8080/architectures/calm-1.json`
+- `http://my-arch.repo:8080/patterns/company-base-pattern.json`
+- `http://my-arch.repo:8080/standards/company-node-standard.json`
+- `http://my-arch.repo:8080/controls/security/schemas/tls-encryption.json`
+- `http://my-arch.repo:8080/healthz`
 
 For bearer-token CLI flows using CALM `directUrlAuth`, `my-arch.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
 
@@ -113,19 +123,28 @@ npm install
    - `OAUTH2_PROXY_COOKIE_SECRET`
    - `KEYCLOAK_DIRECT_URL_CLIENT_SECRET`
    - `KEYCLOAK_TEST_USER_PASSWORD`
-4. Start the full local stack:
+4. Start one of the local stack modes:
 
 ```sh
-make start-web-server
+make start-webserver-noauth
+make start-webserver-authonly
+make start-webserver-authcerts
 ```
 
-`make start-web-server` will:
+`make start-webserver-noauth` will:
+
+- resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
+- replace `infra/nginx/rendered-static/` with a literal copy of `static_noauth/`
+- start only `nginx` with the noauth nginx config and `8080:8080` port publishing
+- serve repository content over `http://<host>:8080` without `keycloak` or `oauth2-proxy`
+
+`make start-webserver-authonly` and `make start-webserver-authcerts` will:
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
 - run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - run `./scripts/render-direct-url-auth-config.py` to generate `custom-idp/v2/generated/direct-url-auth.json` for the local machine client
-- run `./scripts/render-static-content.py` to create the served `infra/nginx/rendered-static/` tree with absolute JSON URLs rewritten to the configured HTTPS origin
+- replace `infra/nginx/rendered-static/` with a literal copy of `static_authonly/` or `static_authcerts/`, depending on the target
 - start `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through bearer-token-authenticated HTTPS
 - serve the Keycloak admin console through the HTTPS Keycloak path
@@ -144,7 +163,7 @@ openssl rand -hex 24
 
 ### CALM CLI direct URL auth
 
-Build the supported local auth module:
+Build the supported local auth module after starting an auth-enabled stack:
 
 ```sh
 cd custom-idp/v2

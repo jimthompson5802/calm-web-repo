@@ -3,20 +3,20 @@
 ## Scope
 
 - Nginx is static-first for repo content in the current local stack.
-- Static content is served over authenticated HTTPS backed by Keycloak.
-- `oauth2-proxy` sits in front of normal content requests.
+- Static content can be served either through authenticated HTTPS backed by Keycloak or through a noauth HTTP nginx-only mode on port `8080`.
+- `oauth2-proxy` sits in front of normal content requests in the auth-enabled modes.
 - `/healthz` is the anonymous operational endpoint.
 - `/keycloak/` is exposed for the local auth and admin flow.
 - `/api` is reserved for future reverse proxying.
-- CALM model files live under `static/` and are rendered into the served static tree for the HTTPS stack.
+- CALM model files live under `static_noauth/`, `static_authonly/`, and `static_authcerts/`, and the selected tree is copied into the served static directory for the chosen startup mode.
 
 ## Layout
 
-- Put CALM architecture JSON files in `static/architectures/`.
-- Put CALM pattern JSON files in `static/patterns/`.
-- Put CALM standard JSON files in `static/standards/`.
-- Put CALM control requirement schemas in `static/controls/**/schemas/`.
-- Put CALM control configs in `static/controls/**/configs/`.
+- Put CALM architecture JSON files in the appropriate `static_*/architectures/` tree.
+- Put CALM pattern JSON files in the appropriate `static_*/patterns/` tree.
+- Put CALM standard JSON files in the appropriate `static_*/standards/` tree.
+- Put CALM control requirement schemas in the appropriate `static_*/controls/**/schemas/` tree.
+- Put CALM control configs in the appropriate `static_*/controls/**/configs/` tree.
 - Keep Python service work under `apps/api/`.
 - Keep TypeScript web work under `apps/web/`.
 - Keep Nginx config under `infra/nginx/`.
@@ -25,7 +25,9 @@
 
 ## Commands
 
-- `make start-web-server`
+- `make start-webserver-noauth`
+- `make start-webserver-authonly`
+- `make start-webserver-authcerts`
 - `make stop-web-server`
 - `make bootstrap`
 - `make test-api`

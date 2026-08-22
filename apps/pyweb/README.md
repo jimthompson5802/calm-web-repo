@@ -66,4 +66,4 @@ curl -i -H 'Authorization: wrong' http://127.0.0.1:8081/architectures/calm-1.jso
 - Default host: `127.0.0.1`
 - Default port: `8081`
 - `--simple-auth` does not apply to `/health`
-- Existing `make start-web-server` / Nginx flow remains unchanged
+- The repo's Nginx startup targets are `make start-webserver-noauth`, `make start-webserver-authonly`, and `make start-webserver-authcerts`

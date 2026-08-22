@@ -1,0 +1,6 @@
+{
+    "$schema": "https://schemas.company.com/data/encryption-at-rest.json",
+    "algorithm": "AES-256-GCM",
+    "key-management": "HSM-backed",
+    "key-rotation-days": 365
+}
