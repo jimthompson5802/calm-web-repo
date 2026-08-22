@@ -4,7 +4,7 @@ import argparse
 import json
 import mimetypes
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlsplit
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8080
+DEFAULT_STATIC_DIR_NAME = "static_authonly"
 SIMPLE_AUTH_HEADER = "Authorization"
 SIMPLE_AUTH_VALUE = "XYZ"
 
@@ -21,22 +22,26 @@ def find_repo_root(start: Path | None = None) -> Path:
     search_from = (start or Path(__file__)).resolve()
 
     for candidate in (search_from, *search_from.parents):
-        if (candidate / "static_authonly").is_dir() and (candidate / "apps").is_dir():
+        if (candidate / DEFAULT_STATIC_DIR_NAME).is_dir() and (candidate / "apps").is_dir():
             return candidate
 
-    raise RuntimeError("Could not locate repo root containing 'static/' and 'apps/'")
+    raise RuntimeError(f"Could not locate repo root containing '{DEFAULT_STATIC_DIR_NAME}/' and 'apps/'")
+
+
+def default_static_root(start: Path | None = None) -> Path:
+    return find_repo_root(start) / DEFAULT_STATIC_DIR_NAME
 
 
 @dataclass(frozen=True)
 class ServerConfig:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
-    static_root: Path = find_repo_root() / "static_authonly"
+    static_root: Path = field(default_factory=default_static_root)
     simple_auth: bool = False
 
 
 class StaticFileRequestHandler(BaseHTTPRequestHandler):
-    static_root = find_repo_root() / "static_authonly"
+    static_root = Path.cwd()
     simple_auth = False
     server_version = "pyweb/0.1"
     sys_version = ""
@@ -134,10 +139,14 @@ def print_startup_messages(config: ServerConfig) -> None:
 
 def parse_args(argv: Sequence[str] | None = None) -> ServerConfig:
     parser = argparse.ArgumentParser(
-        description="Serve files from calm-web-repo/static_authonly using Python's standard library."
+        description="Serve local CALM static files using Python's standard library."
     )
     parser.add_argument("--host", default=DEFAULT_HOST, help="Host interface to bind.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to listen on.")
+    parser.add_argument(
+        "--static-root",
+        help=f"Directory to serve. Defaults to the repo's {DEFAULT_STATIC_DIR_NAME}/ tree.",
+    )
     parser.add_argument(
         "--simple-auth",
         action="store_true",
@@ -145,9 +154,11 @@ def parse_args(argv: Sequence[str] | None = None) -> ServerConfig:
     )
 
     arguments = parser.parse_args(argv)
+    static_root = Path(arguments.static_root).resolve() if arguments.static_root else default_static_root()
     return ServerConfig(
         host=arguments.host,
         port=arguments.port,
+        static_root=static_root,
         simple_auth=arguments.simple_auth,
     )
 

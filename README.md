@@ -42,9 +42,9 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 - `make bootstrap` shows dependency install commands.
 - `make start-webserver-noauth` copies `static_noauth/` into `infra/nginx/rendered-static/` and starts only `nginx` on `http://<host>:8080`.
-- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json` and runs the `apps/pyweb` server in the foreground on `http://127.0.0.1:8080`.
+- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, copies `static_authonly/` into `infra/nginx/rendered-static/`, and starts the `apps/pyweb` server through Docker Compose on `http://127.0.0.1:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, copies `static_authcerts/` into `infra/nginx/rendered-static/`, and starts the full auth stack in detached mode.
-- `make stop-web-server` stops the Nginx service and removes the Compose resources.
+- `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 - `make test-api` runs the Python API tests.
 - `make typecheck-web` runs the TypeScript typecheck.
 
@@ -65,7 +65,7 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 ## Static Content
 
-`make start-webserver-authonly` serves static content through the foreground Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
+`make start-webserver-authonly` serves static content through the Compose-managed Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
 
 Sample URLs after `make start-webserver-authonly`:
 
@@ -143,9 +143,9 @@ make start-webserver-authcerts
 `make start-webserver-authonly` will:
 
 - repoint `~/.calm.json` to `~/.calmauthonly.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
-- print a console hint telling you to press `CTRL-C` to stop the Python web server
-- run `uv run --project apps/pyweb pyweb --simple-auth` in the foreground
-- serve repository content from `static_authonly/` through `http://127.0.0.1:8080`
+- replace `infra/nginx/rendered-static/` with a literal copy of `static_authonly/`
+- build and start the `pyweb` Compose service in detached mode
+- serve repository content from `infra/nginx/rendered-static/` through `http://127.0.0.1:8080`
 - require `Authorization: XYZ` for static `GET` and `HEAD` requests
 
 `make start-webserver-authcerts` will:
@@ -215,10 +215,8 @@ calm validate -a https://my-calm.repo:8443/architectures/calm-1.json
 Stop the static server and remove the Compose resources:
 
 ```sh
-make stop-web-server
+make stop-webserver
 ```
-
-Stop the authonly Python web server with `CTRL-C` in the terminal where you started it.
 
 ## API Access
 Run the API directly (FUTURE WORK):

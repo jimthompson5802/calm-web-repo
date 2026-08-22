@@ -10,10 +10,12 @@ from typing import Iterator
 from pyweb.server import (
     DEFAULT_HOST,
     DEFAULT_PORT,
+    DEFAULT_STATIC_DIR_NAME,
     ServerConfig,
     SIMPLE_AUTH_HEADER,
     SIMPLE_AUTH_VALUE,
     create_server,
+    default_static_root,
     parse_args,
     print_startup_messages,
 )
@@ -170,7 +172,7 @@ def test_parse_args_uses_default_bind_values() -> None:
 
     assert config.host == DEFAULT_HOST
     assert config.port == DEFAULT_PORT
-    assert config.static_root == Path(__file__).resolve().parents[3] / "static_authonly"
+    assert config.static_root == default_static_root()
     assert config.simple_auth is False
 
 
@@ -180,6 +182,19 @@ def test_parse_args_allows_overrides() -> None:
     assert config.host == "0.0.0.0"
     assert config.port == 9090
     assert config.simple_auth is True
+
+
+def test_parse_args_allows_static_root_override(tmp_path: Path) -> None:
+    static_root = tmp_path / "rendered-static"
+    static_root.mkdir()
+
+    config = parse_args(["--static-root", str(static_root)])
+
+    assert config.static_root == static_root.resolve()
+
+
+def test_default_static_root_uses_repo_static_authonly_tree() -> None:
+    assert default_static_root() == Path(__file__).resolve().parents[3] / DEFAULT_STATIC_DIR_NAME
 
 
 def test_print_startup_messages_without_simple_auth(capsys: object) -> None:

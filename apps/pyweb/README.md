@@ -1,8 +1,8 @@
 # pyweb
 
-Small Python standard-library web server for serving files from the repository `static_authonly/` directory.
+Small Python standard-library web server for serving local CALM static content.
 
-This is a developer helper for local work. `make start-webserver-authonly` now uses this Python server in the foreground instead of the docker/nginx auth stack.
+This is a developer helper for local work. `make start-webserver-authonly` now uses this Python server through Docker Compose so `make stop-webserver` can stop it cleanly.
 
 ## Commands
 
@@ -12,8 +12,11 @@ Run these commands from the repository root unless noted otherwise:
 uv sync --project apps/pyweb                         # Install the project plus dev dependencies
 uv run --project apps/pyweb pyweb                    # Start the server with the default host and port
 uv run --project apps/pyweb pyweb --simple-auth      # Start the server with simple header-based auth enabled
+uv run --project apps/pyweb pyweb --static-root infra/nginx/rendered-static
 uv run --project apps/pyweb pyweb --host 127.0.0.1 --port 8081  # Start the server with explicit bind settings
-make start-webserver-authonly                        # Repoint ~/.calm.json and run pyweb --simple-auth in the foreground
+docker-compose up -d pyweb                           # Start the containerized authonly service after preparing rendered-static
+make start-webserver-authonly                        # Repoint ~/.calm.json, copy static_authonly into rendered-static, and start pyweb in Compose
+make stop-webserver                                  # Stop the Compose-managed authonly service and any other running stack services
 uv run --project apps/pyweb pytest                   # Run the pyweb test suite
 uv run --project apps/pyweb mypy                     # Run static type checking
 uv run --project apps/pyweb ruff check .             # Run lint checks
@@ -21,11 +24,12 @@ uv run --project apps/pyweb ruff check .             # Run lint checks
 
 ## Behavior
 
-- Serves `GET /<path>` and `HEAD /<path>` from `../../static_authonly/<path>`
+- Serves `GET /<path>` and `HEAD /<path>` from the configured static root
 - Mirrors the Nginx URL layout, for example:
   - `/architectures/calm-1.json`
   - `/patterns/company-base-pattern.json`
   - `/controls/security/schemas/tls-encryption.json`
+- Defaults to the repository `static_authonly/` tree when `--static-root` is not provided
 - Supports optional `--simple-auth`, which requires `Authorization: XYZ` for static file `GET` and `HEAD` requests
 - Prints a startup confirmation to stdout and tells you to use `CTRL-C` to stop the server
 - Rejects path traversal attempts
@@ -68,5 +72,6 @@ curl -i -H 'Authorization: wrong' http://127.0.0.1:8080/architectures/calm-1.jso
 - Default host: `127.0.0.1`
 - Default port: `8080`
 - `--simple-auth` does not apply to `/health`
-- `make start-webserver-authonly` runs `pyweb --simple-auth` in the foreground and is stopped with `CTRL-C`
+- `make start-webserver-authonly` starts the Compose-managed `pyweb` service in detached mode using `infra/nginx/rendered-static`
+- Stop the authonly service with `make stop-webserver`
 - The repo's nginx/docker startup targets are `make start-webserver-noauth` and `make start-webserver-authcerts`

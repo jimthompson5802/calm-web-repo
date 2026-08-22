@@ -1,4 +1,13 @@
 services:
+  pyweb:
+    build:
+      context: .
+      dockerfile: apps/pyweb/Dockerfile
+    ports:
+      - 8080:8080
+    volumes:
+      - ./infra/nginx/rendered-static:/srv/static:ro
+    restart: unless-stopped
   nginx:
     image: nginx:1.29-alpine
     depends_on:

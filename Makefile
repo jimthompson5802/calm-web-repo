@@ -36,8 +36,8 @@ start-webserver-noauth:
 # start the authonly Python web server using the authonly static tree
 start-webserver-authonly:
 	@$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthonly.json" _prepare-calm-config
-	@echo "Press CTRL-C to stop the Python web server."
-	uv run --project apps/pyweb pyweb --simple-auth
+	@$(MAKE) STATIC_SOURCE=static_authonly _prepare-rendered-static
+	docker-compose up -d --no-deps pyweb
 
 
 # start the full auth stack using the authcerts static tree
