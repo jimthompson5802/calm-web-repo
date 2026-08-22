@@ -47,6 +47,7 @@ services:
       OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS: "true"
       OAUTH2_PROXY_EXTRA_JWT_ISSUERS: https://${CALM_PUBLIC_HOST:-localhost}:8443/keycloak/realms/calm-local=calm-direct-url
       OAUTH2_PROXY_BEARER_TOKEN_LOGIN_FALLBACK: "false"
+      OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL: "true"
     volumes:
       - ./infra/nginx/certs:/etc/oauth2-proxy/certs:ro
     restart: unless-stopped

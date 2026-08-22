@@ -4,6 +4,8 @@ Repository for serving FINOS CALM JSON content with Nginx, plus Python and TypeS
 
 Protected repository content is now bearer-token-only for normal access. The supported local automation path is CALM CLI direct URL loading with the `custom-idp/v2` client-credentials module against the bundled Keycloak realm.
 
+The local `calm-direct-url` machine client uses a Keycloak service-account token. The web stack is configured to accept that bearer token directly for protected static content.
+
 The canonical local stack origin is `https://my-arch.repo:8443`. `make start-web-server` resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed CALM Architecture
