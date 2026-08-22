@@ -1,6 +1,18 @@
 ## Notes as of 2026-08-08
 
-These notes describe CALM CLI document-loading behavior and example validation outputs. Repository content is now served only through authenticated `https://my-arch.repo:8443`, and the checked-in validation script is pending a separate follow-up before it can run against the current auth-only stack. The URL examples below are normalized to the current HTTPS origin for documentation consistency.
+These notes describe CALM CLI document-loading behavior and example validation outputs. Repository content is now served only through authenticated `https://my-arch.repo:8443`, and the supported auth path for protected direct URLs is CALM `directUrlAuth` with the generated `custom-idp/v2` client-credentials config. The checked-in validation script is pending a separate follow-up before it can run against the current auth-only stack. The URL examples below are normalized to the current HTTPS origin for documentation consistency.
+
+Example local `~/.calm.json`:
+
+```json
+{
+  "allowedRemoteHosts": ["my-arch.repo", "localhost"],
+  "directUrlAuth": {
+    "module": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/dist/direct-url-auth.js",
+    "configPath": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/generated/direct-url-auth.json"
+  }
+}
+```
 
 ## Test of validating architectures with `details.detailed-architecture` references, pattern/standards and controls
 

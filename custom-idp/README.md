@@ -5,6 +5,8 @@ This directory contains two minimal TypeScript examples of a `directUrlAuth.modu
 - [`v1/`](./v1/) builds the `direct-url-auth-v1` example
 - [`v2/`](./v2/) builds the `direct-url-auth-v2` example
 
+For the local `setup-keycloak-web` stack, `v2` is the supported module. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by `make start-web-server`.
+
 Each example has the same structure:
 
 - `src/direct-url-auth.ts` implements the module
@@ -13,18 +15,18 @@ Each example has the same structure:
 
 ## Build
 
-Build the `v1` module:
-
-```bash
-cd custom-idp/v1
-npm install
-npm run build
-```
-
 Build the `v2` module:
 
 ```bash
 cd custom-idp/v2
+npm install
+npm test
+```
+
+Build the `v1` module if you still want the older example:
+
+```bash
+cd custom-idp/v1
 npm install
 npm run build
 ```
@@ -51,18 +53,18 @@ source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && npx vitest run shared/src/do
 
 ## Use with CALM
 
-Point `~/.calm.json` at the built JavaScript file for the version you want to use:
+For this stack, point `~/.calm.json` at the built `v2` JavaScript file and the generated local config:
 
 ```json
 {
   "directUrlAuth": {
-    "module": "/absolute/path/to/calm-web-repo/custom-idp/v1/dist/direct-url-auth.js",
-    "configPath": "/absolute/path/to/calm-web-repo/custom-idp/v1/config/direct-url-auth.json"
+    "module": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/dist/direct-url-auth.js",
+    "configPath": "/absolute/path/to/setup-keycloak-web/custom-idp/v2/generated/direct-url-auth.json"
   }
 }
 ```
 
-Swap `v1` for `v2` if you want to use the second example instead.
+The generated config contains the local token endpoint, `clientId` (`calm-direct-url`), and the machine-client secret from your local `.env`.
 
 ## Contract
 

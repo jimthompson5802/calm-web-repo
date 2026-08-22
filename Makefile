@@ -5,6 +5,7 @@ start-web-server:
 		echo "Using local stack host: $$host"; \
 		./scripts/generate-local-certs.sh; \
 		./scripts/render-keycloak-realm.py; \
+		./scripts/render-direct-url-auth-config.py; \
 		./scripts/render-static-content.py; \
 		docker-compose up -d keycloak oauth2-proxy nginx
 

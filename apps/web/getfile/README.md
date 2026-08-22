@@ -1,5 +1,7 @@
 # getfile
 
+Deprecated for this stack: the supported path for protected repository content is now CALM CLI `directUrlAuth` with `custom-idp/v2` client-credentials. This PKCE/browser-login CLI is kept only as a legacy example and is no longer the recommended or expected auth flow for `setup-keycloak-web`.
+
 Node/TypeScript CLI for fetching CALM files from the local Keycloak-protected nginx stack.
 
 ## Prerequisites
@@ -55,6 +57,8 @@ node getfile/dist/main.js https://my-arch.repo:8443/architectures/calm-1.json
 
 When authentication is required, `getfile` opens the default browser and sends you to the local Keycloak login page. After you finish the browser login flow, the CLI exchanges the returned authorization code for a token, caches that session locally, and fetches the requested file.
 
+For the current local stack, prefer the non-interactive client-credentials flow documented in the repo root README instead.
+
 ## Usage
 
 ```text
@@ -91,6 +95,7 @@ npm run getfile -- https://my-arch.repo:8443/architectures/calm-1.json --insecur
 ## Notes
 
 - This CLI is intentionally scoped to the repo's local development stack.
+- It is a legacy PKCE example and may stop matching the repo's primary auth flow over time.
 - Cached sessions are stored per exact `stackOrigin`, so `https://localhost:8443` and `https://my-arch.repo:8443` keep separate entries.
 - The browser usually opens only on first login, when the cached session cannot be refreshed, or after the server rejects a cached token.
 - If the refresh token is still valid, `getfile` renews the access token automatically before making the file request.
