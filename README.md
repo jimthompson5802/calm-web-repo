@@ -9,9 +9,26 @@ The local `calm-direct-url` machine client uses a Keycloak service-account token
 The canonical local stack origin is `https://my-calm.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed CALM Architecture
-[CALM Architecture JSON](docs/architecture/web-repo-architecture.json)
+### `start-webserver-noauth`
+`start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
 
-![](docs/images/index-1.png)
+[CALM Architecture JSON](docs/architecture/start-webserver-noauth.architecture.json)
+
+![](docs/images/my-calm-repo-noauth.png)
+
+### `start-webserver-authonly`
+`start-webserver-authonly` models the lightweight protected local mode built around the Compose-managed Python `pyweb` server. It serves the same `static_http/` content tree over `127.0.0.1:8080`, requires `Authorization: XYZ` for static content requests, and leaves `/health` accessible without that header.
+
+[CALM Architecture JSON](docs/architecture/start-webserver-authonly.architecture.json)
+
+![](docs/images/my-calm-repo-authonly.png)
+
+### `start-webserver-authcerts`
+`start-webserver-authcerts` models the full local authenticated HTTPS stack. Nginx fronts the `static_authcerts/` content tree on port `8443`, uses generated TLS assets, delegates protected-content checks to `oauth2-proxy`, and exposes the bundled Keycloak realm that supports bearer-token and OIDC-backed access.
+
+[CALM Architecture JSON](docs/architecture/start-webserver-authcerts.architecture.json)
+
+![](docs/images/my-calm-repo-authcerts.png)
 
 ## Documentation
 - [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
