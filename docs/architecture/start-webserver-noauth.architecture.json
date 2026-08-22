@@ -12,10 +12,10 @@
       "environment": "local-development"
     },
     {
-      "unique-id": "public-host-detection-helper",
+      "unique-id": "calm-cli",
       "node-type": "service",
       "name": "CALM CLI",
-      "description": "The CALM CLI process invoked by the startup flow, including its use of scripts/detect_public_host.py to resolve the local host name or IP exported as CALM_PUBLIC_HOST before the noauth nginx container is started.",
+      "description": "The CALM CLI process invoked by the startup flow, using scripts/detect_public_host.py to resolve the CALM_PUBLIC_HOST value before the local stack is started.",
       "environment": "local-development"
     },
     {
@@ -28,7 +28,7 @@
     {
       "unique-id": "repository-static-content-http",
       "node-type": "data-asset",
-      "name": "HTTP Static Content Tree",
+      "name": "Static Content Tree (HTTP)",
       "description": "The static_http content tree mounted directly into nginx so architecture JSON, patterns, standards, controls, and related documentation are served from the local repository.",
       "environment": "local-development"
     },
@@ -63,8 +63,8 @@
       "relationship-type": {
         "interacts": {
           "actor": "repository-user",
-          "nodes": [
-            "public-host-detection-helper"
+            "nodes": [
+            "calm-cli"
           ]
         }
       }
@@ -77,7 +77,7 @@
       "relationship-type": {
         "connects": {
           "source": {
-            "node": "public-host-detection-helper"
+            "node": "calm-cli"
           },
           "destination": {
             "node": "nginx-static-server"

@@ -15,20 +15,20 @@
       "unique-id": "calm-cli",
       "node-type": "service",
       "name": "CALM CLI",
-      "description": "The CALM CLI process invoked by the authonly startup flow to prepare and announce the local endpoint before the Python web server is started.",
+      "description": "The CALM CLI process invoked by the startup flow to prepare the local endpoint before the authonly stack is started.",
       "environment": "local-development"
     },
     {
       "unique-id": "simple-auth-contract",
       "node-type": "data-asset",
-      "name": "Simple Authorization Header Contract",
+      "name": "Authorization Header Contract",
       "description": "The authonly access rule enforced by pyweb, requiring Authorization: XYZ for static GET and HEAD requests while leaving /health reachable without the header.",
       "environment": "local-development"
     },
     {
       "unique-id": "repository-static-content-http",
       "node-type": "data-asset",
-      "name": "HTTP Static Content Tree",
+      "name": "Static Content Tree (HTTP)",
       "description": "The static_http content tree mounted directly into the pyweb container so repository architecture files, patterns, standards, controls, and documentation are served from the local repo.",
       "environment": "local-development"
     },
