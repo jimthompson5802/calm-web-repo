@@ -1,6 +1,6 @@
 # pyweb
 
-Small Python standard-library web server for serving files from the repository `static/` directory.
+Small Python standard-library web server for serving files from the repository `static_authonly/` directory.
 
 This is a developer helper for local work. It does not replace the existing Nginx workflow.
 
@@ -20,7 +20,7 @@ uv run --project apps/pyweb ruff check .             # Run lint checks
 
 ## Behavior
 
-- Serves `GET /<path>` from `../../static/<path>`
+- Serves `GET /<path>` and `HEAD /<path>` from `../../static_authonly/<path>`
 - Mirrors the Nginx URL layout, for example:
   - `/architectures/calm-1.json`
   - `/patterns/company-base-pattern.json`
@@ -28,6 +28,7 @@ uv run --project apps/pyweb ruff check .             # Run lint checks
 - Supports optional `--simple-auth`, which requires `Authorization: XYZ` for static file `GET` and `HEAD` requests
 - Prints a startup confirmation to stdout when `--simple-auth` is enabled
 - Rejects path traversal attempts
+- Returns `403` when `--simple-auth` is enabled and the auth header is missing or wrong
 - Returns `404` for missing files and directories
 - Exposes `GET /health` with `{"status":"ok"}`
 
@@ -36,16 +37,16 @@ uv run --project apps/pyweb ruff check .             # Run lint checks
 Without simple auth enabled:
 
 ```sh
-curl http://127.0.0.1:8081/architectures/calm-1.json
-curl http://127.0.0.1:8081/health
+curl http://127.0.0.1:8080/architectures/calm-1.json
+curl http://127.0.0.1:8080/health
 ```
 
 With simple auth enabled:
 
 ```sh
-curl -H 'Authorization: XYZ' http://127.0.0.1:8081/architectures/calm-1.json
-curl -I -H 'Authorization: XYZ' http://127.0.0.1:8081/architectures/calm-1.json
-curl http://127.0.0.1:8081/health
+curl -H 'Authorization: XYZ' http://127.0.0.1:8080/architectures/calm-1.json
+curl -I -H 'Authorization: XYZ' http://127.0.0.1:8080/architectures/calm-1.json
+curl http://127.0.0.1:8080/health
 ```
 
 Expected startup confirmation when `--simple-auth` is enabled:
@@ -57,13 +58,13 @@ Simple authentication enabled; static GET and HEAD requests require Authorizatio
 Expected auth failure when `--simple-auth` is enabled:
 
 ```sh
-curl -i http://127.0.0.1:8081/architectures/calm-1.json
-curl -i -H 'Authorization: wrong' http://127.0.0.1:8081/architectures/calm-1.json
+curl -i http://127.0.0.1:8080/architectures/calm-1.json
+curl -i -H 'Authorization: wrong' http://127.0.0.1:8080/architectures/calm-1.json
 ```
 
 ## Notes
 
 - Default host: `127.0.0.1`
-- Default port: `8081`
+- Default port: `8080`
 - `--simple-auth` does not apply to `/health`
 - The repo's Nginx startup targets are `make start-webserver-noauth`, `make start-webserver-authonly`, and `make start-webserver-authcerts`

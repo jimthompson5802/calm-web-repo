@@ -12,7 +12,7 @@ from typing import Sequence
 from urllib.parse import unquote, urlsplit
 
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8081
+DEFAULT_PORT = 8080
 SIMPLE_AUTH_HEADER = "Authorization"
 SIMPLE_AUTH_VALUE = "XYZ"
 
@@ -21,7 +21,7 @@ def find_repo_root(start: Path | None = None) -> Path:
     search_from = (start or Path(__file__)).resolve()
 
     for candidate in (search_from, *search_from.parents):
-        if (candidate / "static").is_dir() and (candidate / "apps").is_dir():
+        if (candidate / "static_authonly").is_dir() and (candidate / "apps").is_dir():
             return candidate
 
     raise RuntimeError("Could not locate repo root containing 'static/' and 'apps/'")
@@ -31,12 +31,12 @@ def find_repo_root(start: Path | None = None) -> Path:
 class ServerConfig:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
-    static_root: Path = find_repo_root() / "static"
+    static_root: Path = find_repo_root() / "static_authonly"
     simple_auth: bool = False
 
 
 class StaticFileRequestHandler(BaseHTTPRequestHandler):
-    static_root = find_repo_root() / "static"
+    static_root = find_repo_root() / "static_authonly"
     simple_auth = False
     server_version = "pyweb/0.1"
     sys_version = ""
