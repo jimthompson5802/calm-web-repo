@@ -46,6 +46,14 @@ The `make` startup targets do more than launch the local web stack variants. The
 **To test run following bash script**:
 
 ```
+# To use private self-signed certs
+# export NODE_EXTRA_CA_CERTS=/path/to/certs/publiccertfile.crt
+#
+# or 
+#
+# To disable certificatee validation
+# export NODE_TLS_REJECT_UNAUTHORIZED=0
+
 ./scripts/validate-architecture.sh https://my-calm.repo:8443
 ```
 

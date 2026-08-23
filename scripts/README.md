@@ -40,7 +40,8 @@ The direct-url auth config used by the supported CLI module remains minimal:
 - `tokenUrl`
 - `clientId`
 - `clientSecret`
-- optional `caCertPath`
+
+TLS trust for the Node-based CLI flow is configured outside the JSON, for example with `NODE_EXTRA_CA_CERTS`. The `--cacert` flags above are curl-only trust settings for these manual checks.
 
 You can then fetch a protected file with that bearer token:
 

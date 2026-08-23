@@ -5,7 +5,7 @@ This directory contains two minimal TypeScript examples of a `directUrlAuth.modu
 - [`v1/`](./v1/) builds the `direct-url-auth-v1` example
 - [`v2/`](./v2/) builds the `direct-url-auth-v2` example
 
-For the local `setup-keycloak-web` stack, `v2` is the supported module for `make start-webserver-authcerts`. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by that target. The supported config surface is intentionally limited to `tokenUrl`, `clientId`, `clientSecret`, and optional `caCertPath` for private or self-signed CA trust.
+For the local `setup-keycloak-web` stack, `v2` is the supported module for `make start-webserver-authcerts`. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by that target. The supported config surface is intentionally limited to `tokenUrl`, `clientId`, and `clientSecret`.
 
 Each example has the same structure:
 
@@ -72,12 +72,13 @@ The generated JSON has this shape:
 {
   "tokenUrl": "https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token",
   "clientId": "calm-direct-url",
-  "clientSecret": "<secret>",
-  "caCertPath": "/absolute/path/to/localhost.crt"
+  "clientSecret": "<secret>"
 }
 ```
 
 No other direct-URL auth parameters are supported by the local `v2` example.
+
+If the token endpoint or protected direct URL uses a private or self-signed CA, configure Node trust outside the JSON before you run Calm, for example with `NODE_EXTRA_CA_CERTS`.
 
 ## Contract
 

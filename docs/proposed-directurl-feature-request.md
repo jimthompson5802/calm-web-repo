@@ -14,7 +14,7 @@ Add authentication support to the `DirectUrlDocumentLoader` so CALM can retrieve
 
 The primary use case is accessing architecture documents stored in an existing organizational repository that predates CALM Hub and requires authentication. This allows organizations adopting CALM to continue using existing repositories without first migrating their content into CALM Hub.
 
-The feature should provide an IDP-agnostic authentication mechanism based on common industry standards rather than requiring CALM to implement vendor-specific authentication. For this repository, the supported local machine-to-machine mechanism is intentionally limited to OAuth 2.0 Client Credentials plus optional CA trust for private or self-signed certificates.
+The feature should provide an IDP-agnostic authentication mechanism based on common industry standards rather than requiring CALM to implement vendor-specific authentication. For this repository, the supported local machine-to-machine mechanism is intentionally limited to OAuth 2.0 Client Credentials. Private or self-signed CA trust is configured outside the JSON through the Node process environment, for example with `NODE_EXTRA_CA_CERTS`.
 
 Organizations should be able to use standards-compliant IDPs such as PingFederate, PingOne, Keycloak, Okta, Azure AD, ForgeRock, or Auth0 without requiring vendor-specific changes to CALM.
 
@@ -42,7 +42,7 @@ This prevents organizations with established authenticated repositories from dir
 
 The existing `authPluginPath` mechanism is associated with CALM Hub authentication and requires users to provide an implementation of the complete `AuthPlugin` interface.
 
-There is currently no structured configuration for OAuth Client Credentials plus private/self-signed certificate trust when accessing direct URLs.
+There is currently no structured configuration for OAuth Client Credentials when accessing direct URLs.
 
 Reusing the existing CALM Hub authentication configuration would also prevent users from independently configuring authentication for CALM Hub and their existing repositories.
 
@@ -50,14 +50,13 @@ Reusing the existing CALM Hub authentication configuration would also prevent us
 
 Introduce a separate authentication capability specifically for `DirectUrlDocumentLoader`.
 
-The CLI should support a new `directUrlAuth` configuration in `~/.calm.json`. For this repository, the supported machine-to-machine configuration is limited to the information needed for client credentials plus TLS trust:
+The CLI should support a new `directUrlAuth` configuration in `~/.calm.json`. For this repository, the supported machine-to-machine configuration is limited to the information needed for client credentials:
 
 | Key            | Functional behavior                                                          |
 | -------------- | ---------------------------------------------------------------------------- |
 | `tokenUrl`     | OAuth 2.0 token endpoint used for the Client Credentials grant.              |
 | `clientId`     | OAuth client identifier.                                                     |
 | `clientSecret` | OAuth client secret.                                                         |
-| `caCertPath`   | Optional CA certificate path for private or self-signed HTTPS trust.         |
 
 Authentication credentials should be converted into HTTP request headers and automatically applied when `DirectUrlDocumentLoader` retrieves a protected resource.
 
@@ -84,7 +83,7 @@ When `directUrlAuth` is absent, no authentication headers should be added and ex
 Unit tests should verify the supported authentication mechanism, including:
 
 * OAuth Client Credentials token acquisition and caching
-* Private/self-signed CA certificate loading
+* Use of Node process trust defaults for TLS
 * Authentication header generation
 * Error handling for invalid or missing configuration
 
@@ -93,7 +92,7 @@ Unit tests should verify the supported authentication mechanism, including:
 Integration tests should verify at minimum:
 
 1. An OAuth Client Credentials token can be obtained and used to retrieve a protected direct URL.
-2. A protected direct URL can be retrieved when the local CA is self-signed and supplied through `caCertPath`.
+2. A protected direct URL can be retrieved when the local CA is self-signed and Node trust is configured through `NODE_EXTRA_CA_CERTS`.
 3. CALM Hub and an existing repository accessed through `DirectUrlDocumentLoader` can use different authentication configurations during the same execution.
 4. Existing configurations without `directUrlAuth` continue to operate unchanged.
 
@@ -101,12 +100,12 @@ Existing CALM Hub authentication tests should continue to pass without modificat
 
 ### Documentation Requirements:
 
-Update the CALM CLI configuration documentation to describe `directUrlAuth` for OAuth Client Credentials and optional CA certificate trust.
+Update the CALM CLI configuration documentation to describe `directUrlAuth` for OAuth Client Credentials and process-level CA certificate trust.
 
 Provide configuration examples for:
 
 * OAuth Client Credentials
-* Optional CA certificate trust for private or self-signed HTTPS
+* Process-level CA certificate trust for private or self-signed HTTPS
 * Simultaneous CALM Hub and existing repository authentication
 
 ### Implementation Checklist:
@@ -114,7 +113,7 @@ Provide configuration examples for:
 * [ ] Design reviewed and approved
 * [ ] Define direct URL authentication configuration
 * [ ] Implement client-credentials direct URL authentication
-* [ ] Implement private/self-signed CA support
+* [ ] Document private/self-signed CA trust via `NODE_EXTRA_CA_CERTS`
 * [ ] Add authentication support to `DirectUrlDocumentLoader`
 * [ ] Preserve independent CALM Hub authentication behavior
 * [ ] Implementation completed
@@ -133,7 +132,7 @@ Adopting CALM should not require these organizations to migrate existing content
 
 The primary design requirement is therefore to separate **authentication protocol support** from **IDP vendor implementation**.
 
-For the supported local `calm-web-repo` example, CALM direct URL authentication is intentionally narrowed to OAuth 2.0 Client Credentials plus optional CA trust for private or self-signed certificates. Authorization Code with PKCE is out of scope for this repo's supported machine-to-machine flow.
+For the supported local `calm-web-repo` example, CALM direct URL authentication is intentionally narrowed to OAuth 2.0 Client Credentials. Private or self-signed CA trust is configured outside the JSON through the Node process environment, for example with `NODE_EXTRA_CA_CERTS`. Authorization Code with PKCE is out of scope for this repo's supported machine-to-machine flow.
 
 The feature must also maintain a strict separation between the existing CALM Hub authentication path and the authentication path used to access existing repositories. A configuration such as the following should therefore be supported:
 
@@ -146,8 +145,7 @@ The feature must also maintain a strict separation between the existing CALM Hub
     "options": {
       "tokenUrl": "https://idp.example.com/token",
       "clientId": "calm-cli",
-      "clientSecret": "replace-me",
-      "caCertPath": "/absolute/path/to/idp-ca.crt"
+      "clientSecret": "replace-me"
     }
   }
 }

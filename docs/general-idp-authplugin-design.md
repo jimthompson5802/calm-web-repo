@@ -326,7 +326,7 @@ For `calm-web-repo`, the supported direct-URL configuration is intentionally
 minimal. It uses a module plus `configPath`, where `configPath` points to a
 JSON file provided to the module constructor. The machine-to-machine auth
 content in that JSON file is limited to `tokenUrl`, `clientId`,
-`clientSecret`, and optional `caCertPath`.
+`clientSecret`.
 
 An example of the configuration shape looks like this, showing how the CLI can
 be told where the organization module is located so it can provide
@@ -348,16 +348,17 @@ The referenced config file supplied to `configPath` has this shape:
 {
   "tokenUrl": "https://idp.acme.example.com/oauth/token",
   "clientId": "calm-direct-url",
-  "clientSecret": "replace-me",
-  "caCertPath": "/absolute/path/to/idp-ca.crt"
+  "clientSecret": "replace-me"
 }
 ```
 
 This example keeps the direct URL auth input limited to the minimum needed for
-client credentials and TLS trust. The direct URL path resolves a module located
+client credentials. The direct URL path resolves a module located
 by the organization for protected fetches, passes `configPath` to that module's
 constructor, and the existing `authPluginPath` setting remains available for
-the unchanged CALM Hub behavior.
+the unchanged CALM Hub behavior. If private or self-signed CA trust is needed,
+it is configured outside the JSON through the Node process environment, for
+example with `NODE_EXTRA_CA_CERTS`.
 
 ---
 

@@ -10,8 +10,9 @@ request before sending it.
 
 These examples are illustrative, but for this repository the supported
 machine-to-machine configuration is intentionally minimal: `tokenUrl`,
-`clientId`, `clientSecret`, and optional `caCertPath` for private or
-self-signed CA trust.
+`clientId`, and `clientSecret`. If private or self-signed CA trust is needed,
+configure it outside the JSON through the Node process environment, for example
+with `NODE_EXTRA_CA_CERTS`.
 
 ## 1) Example: organization-provided auth module
 
@@ -30,7 +31,6 @@ export type AcmeDirectUrlAuthModuleOptions = {
   tokenUrl: string;
   clientId: string;
   clientSecret: string;
-  caCertPath?: string;
 };
 
 type CachedToken = {
@@ -229,8 +229,7 @@ organization module and pass options into it.
     "options": {
       "tokenUrl": "https://idp.acme.internal/oauth/token",
       "clientId": "calm-cli",
-      "clientSecret": "replace-me",
-      "caCertPath": "/absolute/path/to/idp-ca.crt"
+      "clientSecret": "replace-me"
     }
   }
 }
@@ -247,6 +246,6 @@ show only the following required behaviors:
   data.
 - The request is augmented before it is sent.
 - The supported machine-to-machine config for this repo is limited to client
-  credentials plus optional CA trust.
+  credentials. Private CA trust is configured outside the JSON.
 - Existing CALM Hub authentication is outside the scope of these examples and
   remains unchanged.
