@@ -305,14 +305,15 @@ For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built
 }
 ```
 
-The generated direct URL auth config is intentionally minimal and supports only OAuth 2.0 client credentials plus optional TLS trust for private or self-signed certificates:
+`custom-idp/v2` is a header-only direct URL auth module. It acquires an OAuth 2.0 client-credentials token and implements `getAuthHeaders(url, requestBody)` for the CALM CLI. It does not implement `getTlsConfig()` or load private CA trust from the plugin config. See [`custom-idp/v2/README.md`](custom-idp/v2/README.md) for the sample module details.
+
+The generated direct URL auth config is intentionally minimal and supports only OAuth 2.0 client credentials:
 
 ```json
 {
   "tokenUrl": "https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token",
   "clientId": "calm-direct-url",
-  "clientSecret": "<secret>",
-  "caCertPath": "/absolute/path/to/localhost.crt"
+  "clientSecret": "<secret>"
 }
 ```
 
@@ -322,11 +323,13 @@ Required keys:
 - `clientId`
 - `clientSecret`
 
-Optional key:
+If the token endpoint or protected direct URL uses a private or self-signed CA, configure Node trust before running `calm`. Keep private CA files out of source control and place them in a local path such as `custom-idp/v2/config/certs/private-root-ca.pem` or another machine-specific private directory. Then export:
 
-- `caCertPath` when the token endpoint or protected direct URL uses a private or self-signed CA
+```sh
+export NODE_EXTRA_CA_CERTS="/absolute/path/to/private-root-ca.pem"
+```
 
-The generated direct URL auth config includes the local CA certificate path, so `calm validate` can authenticate to the self-signed local HTTPS stack without separately setting `NODE_EXTRA_CA_CERTS`.
+`NODE_TLS_REJECT_UNAUTHORIZED=0` can disable certificate validation for the Node process, but it is a troubleshooting override and not the recommended default.
 
 The direct URL auth config does not support or require `baseUrl`, `realm`, `clientSecretEnvVar`, `audience`, `scopes`, PKCE fields, redirect URLs, or test-user/admin credentials.
 
