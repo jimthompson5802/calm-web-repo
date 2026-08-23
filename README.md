@@ -276,9 +276,11 @@ calm validate -a https://my-calm.repo:8443/architectures/generated-webapp.json \
   -f pretty
 
 # if neither are set as environment variables
-NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
+NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt \
+   calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
 
-NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
+NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate \
+  -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
 ```
 
 ## Web Server
