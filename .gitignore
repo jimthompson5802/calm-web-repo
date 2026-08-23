@@ -21,3 +21,5 @@ infra/nginx/rendered-static/
 infra/keycloak/import/
 custom-idp/v2/generated/
 apps/web/getfile/tests/fixtures/
+
+sandbox/
