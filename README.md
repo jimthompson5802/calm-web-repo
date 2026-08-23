@@ -6,7 +6,6 @@ Protected repository content in the auth-enabled modes is bearer-token-only for 
 
 The local `calm-direct-url` machine client uses a Keycloak service-account token. The web stack is configured to accept that bearer token directly for protected static content.
 
-The canonical local stack origin is `https://my-calm.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed for CALM DirectUrlDocumentLoader Authentication
 
@@ -15,7 +14,7 @@ For local testing purposes, after building the `calm cli` with support for the `
 The `make` startup targets do more than launch the local web stack variants. They also keep `~/.calm.json` aligned with the active test setup by repointing that symlink to the scenario-specific CALM CLI config before each stack starts. See [Setup test configuration specific `.calm.json` files](#setup-test-configuration-specific-calmjson-files) for details.
 
 ### `start-webserver-noauth`  (Baseline No Authentication)
-`start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
+`start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`, i.e., `http://my-calm.repo:8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
 
 **To test run following bash script**:
 
@@ -27,8 +26,17 @@ The `make` startup targets do more than launch the local web stack variants. The
 
 ![](docs/images/my-calm-repo-noauth.png)
 
+**Contents of `~/.calm.json`**:
+```json
+{
+  "allowedRemoteHosts":[
+    "my-calm.repo"
+  ]
+}
+```
+
 ### `start-webserver-authonly` (Simple hard-coded authentication in Header)
-`start-webserver-authonly` models the lightweight protected local mode built around the Compose-managed Python `pyweb` server. It serves the same `static_http/` content tree over `127.0.0.1:8080`, requires `Authorization: XYZ` for static content requests, and leaves `/health` accessible without that header.
+`start-webserver-authonly` models the lightweight protected local mode built around the Compose-managed Python `pyweb` server. It serves the same `static_http/` content tree over `http://my-calm.repo:8080`, requires `Authorization: XYZ` for static content requests, and leaves `/health` accessible without that header.
 
 **To test run following bash script**:
 
@@ -39,6 +47,31 @@ The `make` startup targets do more than launch the local web stack variants. The
 [CALM Architecture JSON](docs/architecture/start-webserver-authonly.architecture.json)
 
 ![](docs/images/my-calm-repo-authonly.png)
+
+**Source Code for Direct URL Auth Plugin**: [v1/src/direct-url-auth.ts](custom-idp/v1/src/direct-url-auth.ts)
+
+**Contents of `~/.calm.json`**:
+
+```json
+{
+  "allowedRemoteHosts":[
+    "my-calm.repo"
+  ],
+  "directUrlAuth": {
+    "module": "/Users/jim/Desktop/finos/calm-web-repo/custom-idp/v1/dist/direct-url-auth.js",
+    "configPath": "/Users/jim/Desktop/finos/calm-web-repo/custom-idp/v1/config/direct-url-auth.json"
+  }
+}
+```
+
+**Contents of `.../config/direct-url-auth.json`**:
+```json
+{
+
+  "fakeToken": "XYZ"
+}
+
+```
 
 ### `start-webserver-authcerts` (Oauth2 client-credential authentication)
 `start-webserver-authcerts` models the full local authenticated HTTPS stack. Nginx fronts the `static_authcerts/` content tree on port `8443`, uses generated TLS assets, delegates protected-content checks to `oauth2-proxy`, and exposes the bundled Keycloak realm that supports bearer-token and OIDC-backed access.
@@ -60,6 +93,33 @@ The `make` startup targets do more than launch the local web stack variants. The
 [CALM Architecture JSON](docs/architecture/start-webserver-authcerts.architecture.json)
 
 ![](docs/images/my-calm-repo-authcerts.png)
+
+**Source Code For Direct URL Auth Plugin**: [v2/src/direct-url-auth.ts](custom-idp/v2/src/direct-url-auth.ts)
+
+**Contents of `~/.calm.json`***:
+
+```json
+{
+  "allowedRemoteHosts":[
+    "my-calm.repo",
+    "your-calm.repo"
+  ],
+  "directUrlAuth": {
+    "module": "~/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js",
+    "configPath": "~/Desktop/finos/calm-web-repo/custom-idp/v2/generated/direct-url-auth.json"
+  }
+}
+```
+
+**Contents of `.../generated/direct-url-auth.json`**:
+```json
+{
+  "tokenUrl": "https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token",
+  "clientId": "calm-direct-url",
+  "clientSecret": <local secret>
+}
+
+```
 
 ## Documentation
 - [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
