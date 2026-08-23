@@ -12,7 +12,7 @@ The canonical local stack origin is `https://my-calm.repo:8443`. Each startup ta
 
 For local testing purposes, after building the `calm cli` with support for the `directUrlAuth` plugin, run from the `architecture-as-code` root directory `npm run link:cli`.
 
-The `make` startup targets do more than launch the local web stack variants. They also keep `~/.calm.json` aligned with the active test setup by repointing that symlink to the scenario-specific CALM CLI config before each stack starts.
+The `make` startup targets do more than launch the local web stack variants. They also keep `~/.calm.json` aligned with the active test setup by repointing that symlink to the scenario-specific CALM CLI config before each stack starts. See [Setup test configuration specific `.calm.json` files](#setup-test-configuration-specific-calmjson-files) for details.
 
 ### `start-webserver-noauth`  (Baseline No Authentication)
 `start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
@@ -76,6 +76,88 @@ The `make` startup targets do more than launch the local web stack variants. The
 - Node.js (LTS recommended)
 - npm
 - A local hosts-file entry, e.g., in `/etc/hosts` on MacOS, such as `127.0.0.1 my-calm.repo`
+
+## Setup test configuration specific `.calm.json` files
+
+Do not create `~/.calm.json` as a regular file. The Makefile manages it as a symlink.
+
+### Template: `~/.calmnoauth.json`
+
+Use this file for `make start-webserver-noauth`.
+
+```json
+{
+  "allowedRemoteHosts": ["my-calm.repo"]
+}
+```
+
+Notes:
+
+- This mode serves content over plain HTTP from the nginx-only stack.
+- No direct URL auth module is required.
+
+## Template: `~/.calmauthonly.json`
+
+Use this file for `make start-webserver-authonly`.
+
+```json
+{
+  "allowedRemoteHosts": ["my-calm.repo"],
+  "directUrlAuth": {
+    "module": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v1/dist/direct-url-auth.js",
+    "configPath": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v1/config/direct-url-auth.json"
+  }
+}
+```
+
+### Build directUrlAuth Plugin for authonly
+
+Build the `v1` module:
+
+```bash
+cd custom-idp/v1
+npm install
+npm run build
+```
+
+Notes:
+
+- This mode serves content from `apps/pyweb` on `http://my-calm.repo:8080`.
+- This mirrors the cert-based template structure, but points to the checked-in `custom-idp/v1` example instead of the `v2` Keycloak client-credentials module.
+- The `directUrlAuth.module` value must point to the built JavaScript output, not the TypeScript source.
+- The `directUrlAuth.configPath` value points to the checked-in `custom-idp/v1/config/direct-url-auth.json` example config.
+
+## Template: `~/.calmauthcerts.json`
+
+Use this file for `make start-webserver-authcerts`.
+
+```json
+{
+  "allowedRemoteHosts": ["my-calm.repo", "localhost"],
+  "directUrlAuth": {
+    "module": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js",
+    "configPath": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v2/generated/direct-url-auth.json"
+  }
+}
+```
+
+### Build directUrlAuth Plugin for authcerts
+
+Build the `v2` module:
+
+```bash
+cd custom-idp/v2
+npm install
+npm run build
+```
+
+
+Notes:
+
+- This mode serves protected content through HTTPS on `https://my-calm.repo:8443`.
+- The `directUrlAuth.module` value must point to the built JavaScript output, not the TypeScript source.
+- The `directUrlAuth.configPath` value must point to the generated JSON written by `./scripts/render-direct-url-auth-config.py`.
+
 
 ## Commands
 
