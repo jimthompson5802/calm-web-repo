@@ -121,11 +121,6 @@ The `make` startup targets do more than launch the local web stack variants. The
 
 ```
 
-## Documentation
-- [`docs/usage-notes.md`](docs/usage-notes.md) captures CALM CLI behavior notes for local-file vs HTTP-loaded resources.
-- [`docs/validate-architecture-script.md`](docs/validate-architecture-script.md) describes the scripted CALM architecture validation checks.
-- [`docs/control-validation-test-explanation.md`](docs/control-validation-test-explanation.md) explains node-level control validation results for `control-test-architecture.json`.
-
 ## Layout
 
 - `static_http/` and `static_authcerts/` hold the source CALM static trees used by the local web-server startup modes.
