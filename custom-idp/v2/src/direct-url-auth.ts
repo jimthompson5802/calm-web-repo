@@ -1,17 +1,11 @@
 import * as http from 'node:http';
 import * as https from 'node:https';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, resolve } from 'node:path';
 
 type AuthConfig = {
     tokenUrl: string;
     clientId: string;
     clientSecret: string;
-    caCertPath?: string;
-};
-
-type LoadedAuthConfig = AuthConfig & {
-    caCert?: string;
 };
 
 type TokenResponse = {
@@ -29,7 +23,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default class DirectUrlAuthPlugin {
-    private readonly configPromise: Promise<LoadedAuthConfig>;
+    private readonly configPromise: Promise<AuthConfig>;
     private cachedToken?: CachedToken;
 
     constructor(configPath?: string) {
@@ -43,13 +37,6 @@ export default class DirectUrlAuthPlugin {
     async getAuthHeaders(_url: string, _requestBody: unknown): Promise<Record<string, string>> {
         return {
             Authorization: `Bearer ${await this.getAccessToken()}`
-        };
-    }
-
-    async getTlsConfig(): Promise<{ httpsCaCert?: string }> {
-        const config = await this.configPromise;
-        return {
-            httpsCaCert: config.caCert,
         };
     }
 
@@ -79,7 +66,7 @@ export default class DirectUrlAuthPlugin {
         return this.cachedToken.accessToken;
     }
 
-    private async loadConfig(configPath: string): Promise<LoadedAuthConfig> {
+    private async loadConfig(configPath: string): Promise<AuthConfig> {
         let text: string;
         try {
             text = await readFile(configPath, 'utf8');
@@ -97,26 +84,10 @@ export default class DirectUrlAuthPlugin {
         if (!config.tokenUrl || !config.clientId || !config.clientSecret) {
             throw new Error(`Direct URL auth config at ${configPath} must include tokenUrl, clientId, and clientSecret`);
         }
-
-        if (!config.caCertPath) {
-            return config;
-        }
-
-        const certPath = isAbsolute(config.caCertPath)
-            ? config.caCertPath
-            : resolve(dirname(configPath), config.caCertPath);
-
-        try {
-            return {
-                ...config,
-                caCert: await readFile(certPath, 'utf8'),
-            };
-        } catch (error) {
-            throw new Error(`Failed to read direct URL auth CA certificate at ${certPath}: ${getErrorMessage(error)}`);
-        }
+        return config;
     }
 
-    private getTokenEndpoint(config: LoadedAuthConfig): URL {
+    private getTokenEndpoint(config: AuthConfig): URL {
         try {
             return new URL(config.tokenUrl);
         } catch (error) {
@@ -124,7 +95,7 @@ export default class DirectUrlAuthPlugin {
         }
     }
 
-    private async requestToken(config: LoadedAuthConfig, body: URLSearchParams): Promise<TokenResponse> {
+    private async requestToken(config: AuthConfig, body: URLSearchParams): Promise<TokenResponse> {
         const tokenUrl = this.getTokenEndpoint(config);
         const requestBody = body.toString();
         const transport = tokenUrl.protocol === 'https:' ? https : http;
@@ -141,7 +112,6 @@ export default class DirectUrlAuthPlugin {
                     'content-type': 'application/x-www-form-urlencoded',
                     'content-length': Buffer.byteLength(requestBody).toString(),
                 },
-                ca: tokenUrl.protocol === 'https:' ? config.caCert : undefined,
             }, (response) => {
                 let responseBody = '';
                 response.setEncoding('utf8');

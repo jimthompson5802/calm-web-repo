@@ -152,15 +152,13 @@ test("fails clearly when the token response omits access_token", async () => {
   });
 });
 
-test("uses the configured CA certificate for the token request", async () => {
+test("uses Node TLS defaults for the token request", async () => {
   await withTempDir(async (root) => {
-    const certPath = path.join(root, "local-ca.pem");
-    await writeFile(certPath, "test-ca-cert", "utf8");
-    const configPath = await writeConfig(root, { caCertPath: "./local-ca.pem" });
+    const configPath = await writeConfig(root);
     const plugin = new DirectUrlAuthPlugin(configPath);
 
     await withMockHttpsRequest(({ options }) => {
-      assert.equal(options.ca, "test-ca-cert");
+      assert.equal(options.ca, undefined);
       return {
         body: JSON.stringify({ access_token: "token-123", expires_in: 300 }),
       };
@@ -196,18 +194,6 @@ test("fails clearly when the config file cannot be parsed", async () => {
     await assert.rejects(
       plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
       /Failed to parse direct URL auth config at .*direct-url-auth\.json:/,
-    );
-  });
-});
-
-test("fails clearly when the configured CA certificate cannot be read", async () => {
-  await withTempDir(async (root) => {
-    const configPath = await writeConfig(root, { caCertPath: "./missing-ca.pem" });
-    const plugin = new DirectUrlAuthPlugin(configPath);
-
-    await assert.rejects(
-      plugin.getAuthHeaders("https://my-calm.repo:8443/architectures/calm-1.json"),
-      /Failed to read direct URL auth CA certificate at .*missing-ca\.pem:/,
     );
   });
 });

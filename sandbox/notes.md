@@ -1,0 +1,1 @@
+"caCertPath": "/Users/jim/Desktop/finos/calm-web-repo/infra/nginx/certs/localhost.crt"

@@ -1,6 +1,5 @@
 {
   "tokenUrl": "https://idp.example.com/oauth/token",
   "clientId": "calm-direct-url",
-  "clientSecret": "replace-me",
-  "caCertPath": "/absolute/path/to/idp-ca.crt"
+  "clientSecret": "replace-me"
 }
