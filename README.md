@@ -47,11 +47,11 @@ The `make` startup targets do more than launch the local web stack variants. The
 
 ```
 # To use private self-signed certs
-# export NODE_EXTRA_CA_CERTS=/path/to/certs/publiccertfile.crt
+# export NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt
 #
 # or 
 #
-# To disable certificatee validation
+# To disable certificate validation
 # export NODE_TLS_REJECT_UNAUTHORIZED=0
 
 ./scripts/validate-architecture.sh https://my-calm.repo:8443
@@ -170,7 +170,7 @@ Notes:
 ## Commands
 
 - `make start-webserver-noauth` mounts `static_http/` directly into `nginx` and starts it on `http://<host>:8080`.
-- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://127.0.0.1:8080`.
+- `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://my-calm.repo:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 
@@ -184,41 +184,42 @@ Notes:
 ## Control Authoring Note
 
 - The tracked CALM source files under `static_http/` and `static_authcerts/` are mounted directly into the serving container for the corresponding startup target.
-- Some tracked JSON files still use `https://localhost:8443/...` placeholders. The startup flow does not rewrite those URLs during serving.
 - Control configuration is intentionally inlined with `config` for architecture requirements in this repo.
 - Keep control configs in `static_*/controls/**/configs/*.json` as reusable source artifacts, but copy values inline when updating architecture control requirements. At present there appears to be a false-positive error when the config-url is used.
 
-## Static Content
+## Example `calm validate` commands
 
-`make start-webserver-authonly` serves static content through the Compose-managed Python server on `http://127.0.0.1:8080` and requires `Authorization: XYZ`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443`. `make start-webserver-noauth` serves the same static URL layout over plain HTTP on port `8080`, without Keycloak or `oauth2-proxy`. In all modes, a health endpoint remains available.
+`make start-webserver-noauth` serves CALM artifacts over `http://my-calm.repo:8080` with only the `allowedRemoteHosts` protection.  `make start-webserver-authonly` adds authentication protection by requiring a hard-code `Header` with `Authorization: XYZ` and uses `http://my-calm.repo:8080`.   `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443` along with `allowedRemoteHosts` protection.
 
-Sample URLs after `make start-webserver-authonly`:
+Sample commands after `make-start-noauth` and `make start-webserver-authonly`:
 
-- `http://127.0.0.1:8080/architectures/calm-1.json`
-- `http://127.0.0.1:8080/patterns/company-base-pattern.json`
-- `http://127.0.0.1:8080/controls/security/schemas/tls-encryption.json`
-- `http://127.0.0.1:8080/health`
+```sh
+calm validate -a http://my-calm.repo:8080/architectures/calm-1.json -f pretty
 
-Sample URLs after `make start-webserver-authcerts`:
+calm validate -a http://my-calm.repo:8080/architectures/calm-3.json -f pretty
 
-- `https://my-calm.repo:8443/`
-- `https://my-calm.repo:8443/architectures/calm-1.json`
-- `https://my-calm.repo:8443/patterns/company-base-pattern.json`
-- `https://my-calm.repo:8443/standards/company-node-standard.json`
-- `https://my-calm.repo:8443/controls/security/schemas/tls-encryption.json`
-- `https://my-calm.repo:8443/healthz`
-- `https://my-calm.repo:8443/keycloak/admin/master/console/`
+calm validate -a http://my-calm.repo:8080/architectures/generated-webapp.json \
+  -p http://my-calm.repo:8080/patterns/company-base-pattern.json \
+  -f pretty
+```
 
-Sample URLs after `make start-webserver-noauth`:
+Sample commands after `make start-webserver-authcerts`:
 
-- `http://my-calm.repo:8080/`
-- `http://my-calm.repo:8080/architectures/calm-1.json`
-- `http://my-calm.repo:8080/patterns/company-base-pattern.json`
-- `http://my-calm.repo:8080/standards/company-node-standard.json`
-- `http://my-calm.repo:8080/controls/security/schemas/tls-encryption.json`
-- `http://my-calm.repo:8080/healthz`
+```sh
+# assumes NODE_EXTRA_CA_CERTS or NODE_TLS_REJECT_UNAUTHORIZED are environment variables
+calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
 
-For bearer-token CLI flows using CALM `directUrlAuth`, `my-calm.repo` is the preferred origin. `localhost` remains accepted by the CLI for compatibility when the stack origin file points at a different local hostname.
+calm validate -a https://my-calm.repo:8443/architectures/calm-3.json -f pretty
+
+calm validate -a https://my-calm.repo:8443/architectures/generated-webapp.json \
+  -p https://my-calm.repo:8443/patterns/company-base-pattern.json \
+  -f pretty
+
+# if neither are set as environment variables
+NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
+
+NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty
+```
 
 ## Web Server
 
@@ -226,13 +227,14 @@ For bearer-token CLI flows using CALM `directUrlAuth`, `my-calm.repo` is the pre
 
 1. Copy `.env.example` to `.env`.
 2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`.
-3. Set local-only values for:
+3. Needed only for `start-webserver-authcerts`, assuming use of KeyCloak, set local-only values for:
    - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
    - `OAUTH2_PROXY_CLIENT_SECRET`
    - `OAUTH2_PROXY_COOKIE_SECRET`
    - `KEYCLOAK_DIRECT_URL_CLIENT_SECRET`
    - `KEYCLOAK_TEST_USER_PASSWORD`
+
 4. Start one of the local stack modes:
 
 ```sh
@@ -247,14 +249,14 @@ make start-webserver-authcerts
 - repoint `~/.calm.json` to `~/.calmnoauth.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
 - mount `static_http/` directly into `nginx`
 - start only `nginx` with the noauth nginx config and `8080:8080` port publishing
-- serve repository content over `http://<host>:8080` without `keycloak` or `oauth2-proxy`
+- serve repository content over `http://<host>:8080` with only basic protection provided by the allow list of remote hosts.
 
 `make start-webserver-authonly` will:
 
 - repoint `~/.calm.json` to `~/.calmauthonly.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
 - mount `static_http/` directly into the `pyweb` container
 - build and start the `pyweb` Compose service in detached mode
-- serve repository content from `static_http/` through `http://127.0.0.1:8080`
+- serve repository content from `static_http/` through `http://my-calm.repo:8080`
 - require `Authorization: XYZ` for static `GET` and `HEAD` requests
 
 `make start-webserver-authcerts` will:
@@ -334,7 +336,7 @@ Required keys:
 If the token endpoint or protected direct URL uses a private or self-signed CA, configure Node trust before running `calm`. Keep private CA files out of source control and place them in a local path such as `custom-idp/v2/config/certs/private-root-ca.pem` or another machine-specific private directory. Then export:
 
 ```sh
-export NODE_EXTRA_CA_CERTS="/absolute/path/to/private-root-ca.pem"
+export NODE_EXTRA_CA_CERTS=/absolute/path/to/public-certification.crt
 ```
 
 `NODE_TLS_REJECT_UNAUTHORIZED=0` can disable certificate validation for the Node process, but it is a troubleshooting override and not the recommended default.
