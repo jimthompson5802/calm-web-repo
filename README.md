@@ -9,12 +9,15 @@ The local `calm-direct-url` machine client uses a Keycloak service-account token
 The canonical local stack origin is `https://my-calm.repo:8443`. Each startup target resolves the public host from `CALM_PUBLIC_HOST`, falling back to the current auto-detected local IP only when no hostname is configured.
 
 ## Testbed for CALM DirectUrlDocumentLoader Authentication
+
+For local testing purposes, after building the `calm cli` with support for the `directUrlAuth` plugin, run from the `architecture-as-code` root directory `npm run link:cli`.
+
 The `make` startup targets do more than launch the local web stack variants. They also keep `~/.calm.json` aligned with the active test setup by repointing that symlink to the scenario-specific CALM CLI config before each stack starts.
 
 ### `start-webserver-noauth`  (Baseline No Authentication)
 `start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
 
-**Run following bash script to test**:
+**To test run following bash script**:
 
 ```
 ./scripts/validate-architecture.sh
@@ -27,7 +30,7 @@ The `make` startup targets do more than launch the local web stack variants. The
 ### `start-webserver-authonly` (Simple hard-coded authentication in Header)
 `start-webserver-authonly` models the lightweight protected local mode built around the Compose-managed Python `pyweb` server. It serves the same `static_http/` content tree over `127.0.0.1:8080`, requires `Authorization: XYZ` for static content requests, and leaves `/health` accessible without that header.
 
-**Run following bash script to test**:
+**To test run following bash script**:
 
 ```
 ./scripts/validate-architecture.sh
@@ -40,7 +43,7 @@ The `make` startup targets do more than launch the local web stack variants. The
 ### `start-webserver-authcerts` (Oauth2 client-credential authentication)
 `start-webserver-authcerts` models the full local authenticated HTTPS stack. Nginx fronts the `static_authcerts/` content tree on port `8443`, uses generated TLS assets, delegates protected-content checks to `oauth2-proxy`, and exposes the bundled Keycloak realm that supports bearer-token and OIDC-backed access.
 
-**Run following bash script to test**:
+**To test run following bash script**:
 
 ```
 ./scripts/validate-architecture.sh https://my-calm.repo:8443
