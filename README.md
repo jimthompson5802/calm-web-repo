@@ -121,15 +121,133 @@ The `make` startup targets do more than launch the local web stack variants. The
 
 ```
 
-## Layout
+## Negative test cases
 
-- `static_http/` and `static_authcerts/` hold the source CALM static trees used by the local web-server startup modes.
-- Each static tree contains `architectures/`, `patterns/`, `standards/`, and `controls/` content.
-- `apps/pyweb/` holds the small Python server used by the authonly local mode.
-- `infra/nginx/` holds the Nginx config and local TLS assets.
-- `infra/keycloak/` holds the local Keycloak realm template used to generate the dev import.
+Given the setup with `make start-webserver-authcerts`, here are example of negative tests.  The output shown are the trimmed down `--verbose`
 
-`/api` is reserved for future reverse proxying. Do not use that path for static assets.
+### Support for self-signed certs not setup.
+```
+$ calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty -v
+(node:65855) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Loading direct URL auth module from config file: ~/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+info [calm-cli]:     Direct URL auth configPath: ~/Desktop/finos/calm-web-repo/custom-idp/v2/generated/direct-url-auth.json
+info [direct URL auth module]:     🔍 Loading direct URL auth module: /Users/jim/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+debug [calm-cli]:    Direct URL auth module loaded successfully
+info [calm-cli]:     Using allowed remote hosts from config file
+debug [multi-strategy-document-loader]:    Initialising MultiStrategyDocumentLoader with loaders: FileSystemDocumentLoader, DirectUrlDocumentLoader
+
+<<<<<<<<<<<<<<<<<REMOVED EXTRANEOUS DEBUG MESSAGES>>>>>>>>>>>>>>>>>
+
+debug [multi-strategy-document-loader]:    Document Loader Report:
+Loader FileSystemDocumentLoader FAILED with error: Document with id [https://my-calm.repo:8443/architectures/calm-1.json] and type [architecture] was requested but not loaded at initialisation. 
+            File system document loader can only load at startup. Please ensure the schemas are present on your directory path or use CALMHub.
+Loader DirectUrlDocumentLoader FAILED with error: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+
+error [calm-validate]:    An error occurred while validating: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+error [calm-validate]:    Cause: Direct URL auth token request to https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token failed: self-signed certificate
+debug [calm-validate]:    AUTHENTICATION_FAILED: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+    at DirectUrlDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94164:21)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at MultiStrategyDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94236:20)
+    at loadArchitecture (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115327:16)
+    at loadArchitectureAndPattern (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115266:24)
+    at runValidate (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119095:22)
+    at Command.<anonymous> (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119609:5)
+    at Command.parseAsync (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/node_modules/commander/lib/command.js:1122:5)
+```
+
+
+### Before executing the following `calm validate` commands, this environment variable was set up: `export NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt`
+
+### Invalid host name
+```
+$ calm validate -a https://your-calm.repo:8443/architectures/calm-1.json -f pretty -v
+
+(node:53126) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Loading direct URL auth module from config file: ~/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+info [calm-cli]:     Direct URL auth configPath: ~/Desktop/finos/calm-web-repo/custom-idp/v2/generated/direct-url-auth.json
+info [direct URL auth module]:     🔍 Loading direct URL auth module: /Users/jim/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+debug [calm-cli]:    Direct URL auth module loaded successfully
+info [calm-cli]:     Using allowed remote hosts from config file
+
+<<<<<<<<<<<<<<<<<REMOVED EXTRANEOUS DEBUG MESSAGES>>>>>>>>>>>>>>>>>
+
+debug [file-system-document-loader]:    Document with id [https://your-calm.repo:8443/architectures/calm-1.json] and type [architecture] was requested but not loaded at initialisation. 
+            File system document loader can only load at startup. Please ensure the schemas are present on your directory path or use CALMHub.
+debug [direct-url-document-loader]:    Starting Request: {
+  "method": "get",
+  "url": "https://your-calm.repo:8443/architectures/calm-1.json",
+  "baseURL": "https://your-calm.repo:8443",
+  "path": "/architectures/calm-1.json",
+  "timeout": 10000,
+  "maxRedirects": 0,
+  "allowAbsoluteUrls": false,
+  "headers": {
+    "Accept": "application/json, text/plain, */*",
+    "Content-Type": "application/json"
+  },
+  "authHeadersPresent": true,
+  "authHeaderNames": [
+    "Authorization"
+  ]
+}
+error [multi-strategy-document-loader]:    Loader DirectUrlDocumentLoader failed fatally loading document: https://your-calm.repo:8443/architectures/calm-1.json. Enable debug logging for the full loader report.
+debug [multi-strategy-document-loader]:    Document Loader Report:
+Loader FileSystemDocumentLoader FAILED with error: Document with id [https://your-calm.repo:8443/architectures/calm-1.json] and type [architecture] was requested but not loaded at initialisation. 
+            File system document loader can only load at startup. Please ensure the schemas are present on your directory path or use CALMHub.
+Loader DirectUrlDocumentLoader FAILED with error: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
+
+error [calm-validate]:    An error occurred while validating: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
+error [calm-validate]:    Cause: Hostname/IP does not match certificate's altnames: Host: your-calm.repo. is not in the cert's altnames: DNS:localhost, DNS:host.docker.internal, IP Address:127.0.0.1, DNS:my-calm.repo
+error [calm-validate]:    Caused by: Hostname/IP does not match certificate's altnames: Host: your-calm.repo. is not in the cert's altnames: DNS:localhost, DNS:host.docker.internal, IP Address:127.0.0.1, DNS:my-calm.repo
+debug [calm-validate]:    UNKNOWN: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
+    at DirectUrlDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94194:17)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at MultiStrategyDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94236:20)
+    at loadArchitecture (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115327:16)
+    at loadArchitectureAndPattern (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115266:24)
+    at runValidate (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119095:22)
+    at Command.<anonymous> (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119609:5)
+    at Command.parseAsync (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/node_modules/commander/lib/command.js:1122:5)
+```
+
+### `directUrlAuth.configPath` contains invalid `clientID`
+```
+$ calm validate -a https://my-calm.repo:8443/architectures/calm-1.json -f pretty -v
+(node:62378) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+info [calm-cli]:     Loading direct URL auth module from config file: ~/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+info [calm-cli]:     Direct URL auth configPath: ~/Desktop/finos/calm-web-repo/custom-idp/v2/generated/direct-url-auth.json
+info [direct URL auth module]:     🔍 Loading direct URL auth module: /Users/jim/Desktop/finos/calm-web-repo/custom-idp/v2/dist/direct-url-auth.js
+debug [calm-cli]:    Direct URL auth module loaded successfully
+info [calm-cli]:     Using allowed remote hosts from config file
+debug [multi-strategy-document-loader]:    Initialising MultiStrategyDocumentLoader with loaders: FileSystemDocumentLoader, DirectUrlDocumentLoader
+
+<<<<<<<<<<<<<<<<<REMOVED EXTRANEOUS DEBUG MESSAGES>>>>>>>>>>>>>>>>>
+
+debug [multi-strategy-document-loader]:    Document Loader Report:
+Loader FileSystemDocumentLoader FAILED with error: Document with id [https://my-calm.repo:8443/architectures/calm-1.json] and type [architecture] was requested but not loaded at initialisation. 
+            File system document loader can only load at startup. Please ensure the schemas are present on your directory path or use CALMHub.
+Loader DirectUrlDocumentLoader FAILED with error: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+
+error [calm-validate]:    An error occurred while validating: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+error [calm-validate]:    Cause: Direct URL auth token request to https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token failed: 401 Unauthorized
+debug [calm-validate]:    AUTHENTICATION_FAILED: Direct URL authentication failed for https://my-calm.repo:8443/architectures/calm-1.json. Check direct URL auth configuration and remote credentials.
+    at DirectUrlDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94164:21)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at MultiStrategyDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94236:20)
+    at loadArchitecture (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115327:16)
+    at loadArchitectureAndPattern (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:115266:24)
+    at runValidate (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119095:22)
+    at Command.<anonymous> (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:119609:5)
+    at Command.parseAsync (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/node_modules/commander/lib/command.js:1122:5)
+Mac:jim calm-web-repo[507]$ 
+```
+
+
+
 
 ## Prerequisites
 
@@ -413,6 +531,8 @@ Stop the static server and remove the Compose resources:
 ```sh
 make stop-webserver
 ```
+
+
 
 ## Secret Handling
 
