@@ -6,12 +6,20 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cert_dir="${repo_root}/infra/nginx/certs"
 cert_path="${cert_dir}/localhost.crt"
 key_path="${cert_dir}/localhost.key"
+custom_idp_cert_dir="${repo_root}/custom-idp/v2/certs"
+custom_idp_cert_path="${custom_idp_cert_dir}/localhost.crt"
 public_host="${CALM_PUBLIC_HOST:-$(python3 "${repo_root}/scripts/detect_public_host.py")}"
 
 mkdir -p "${cert_dir}"
 
+sync_custom_idp_cert() {
+  mkdir -p "${custom_idp_cert_dir}"
+  cp "${cert_path}" "${custom_idp_cert_path}"
+}
+
 if [[ -f "${cert_path}" && -f "${key_path}" ]]; then
   if openssl x509 -in "${cert_path}" -noout -text 2>/dev/null | grep -Fq "${public_host}"; then
+    sync_custom_idp_cert
     exit 0
   fi
 fi
@@ -53,3 +61,5 @@ openssl req \
   -config "${tmp_config}" \
   -keyout "${key_path}" \
   -out "${cert_path}"
+
+sync_custom_idp_cert

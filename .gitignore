@@ -20,6 +20,7 @@ infra/nginx/certs/
 infra/nginx/rendered-static/
 infra/keycloak/import/
 custom-idp/v2/generated/
+custom-idp/v2/certs/
 apps/web/getfile/tests/fixtures/
 
 sandbox/
