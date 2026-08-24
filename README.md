@@ -490,7 +490,7 @@ For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built
 }
 ```
 
-`custom-idp/v2` is a header-only direct URL auth module. It acquires an OAuth 2.0 client-credentials token and implements `getAuthHeaders(url, requestBody)` for the CALM CLI. It does not implement `getTlsConfig()` or load private CA trust from the plugin config. See [`custom-idp/v2/README.md`](custom-idp/v2/README.md) for the sample module details.
+`custom-idp/v2` is a header-only direct URL auth module. It acquires an OAuth 2.0 client-credentials token and implements `getAuthHeaders(url, requestBody)` for the CALM CLI. See [`custom-idp/v2/README.md`](custom-idp/v2/README.md) for the sample module details.
 
 The generated direct URL auth config is intentionally minimal and supports only OAuth 2.0 client credentials:
 

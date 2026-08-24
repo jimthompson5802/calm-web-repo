@@ -8,7 +8,7 @@ The plugin exports a class that implements:
 getAuthHeaders(url: string, requestBody: unknown): Promise<Record<string, string>>
 ```
 
-It does not implement `getTlsConfig()`. It does not load CA certificates from plugin config. It gets an OAuth client-credentials token and returns it as an `Authorization` header.
+It gets an OAuth client-credentials token and returns it as an `Authorization` header.  Certificate validation is performed by the Node run-time.
 
 ## Config
 

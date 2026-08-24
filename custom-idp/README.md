@@ -87,4 +87,3 @@ The module:
 - default-exports a class
 - accepts `configPath?: string` in the constructor
 - implements `getAuthHeaders(url, requestBody)`
-- may optionally implement `getTlsConfig()` to provide TLS trust material for the protected direct-URL fetch itself
