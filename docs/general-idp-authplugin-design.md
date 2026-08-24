@@ -81,25 +81,6 @@ URL loader path must call it, and the outbound request must be augmented with
 the returned authentication data. The document does not need to require a
 particular set of built-in flows to achieve that.
 
-### Package Dependency Graph
-
-The dependency diagram below still shows one possible structural shape. For the
-purposes of this requirement, the important point is simply that organization
-authentication logic can live outside this repository and be consumed by the
-direct URL path.
-
-```mermaid
-graph LR
-    CLI["@finos/calm-cli"]
-    AUTH["@finos/calm-auth\n(new)"]
-    SHARED["@finos/calm-shared"]
-    EXTORG["@acme/calm-inhouse-idp\n(external org package)"]
-
-    CLI --> AUTH
-    CLI --> SHARED
-    AUTH --> SHARED
-    EXTORG --> AUTH
-```
 
 ### Interface Layer
 
@@ -252,18 +233,12 @@ The organization module is expected to be owned by the end-user organization
 when the authentication requirements are organization-specific. That module 
 lives outside the CALM project repository, evolve independently, and carry whatever internal
 logic is needed to gather the authentication information for protected direct
-URLs.
-
-In this model, the end-user organization clones the CALM repository, builds the
-`@finos/calm-auth` package locally from that source, and includes it alongside
-its own in-house module in the same deployment or execution environment.
-
+URLs.  It is injected into the `calm cli` run-time by the` DirectUrlDocumentLoader` through a configuration parameter.
 ```mermaid
 graph TB
     subgraph ORG["Organisation (private)"]
-        subgraph CALM_SRC["git repo: acme/architecture-as-code\n(cloned from FINOS CALM repo)"]
+        subgraph CALM_CLI["calm cli run-time"]
             SHARED["@finos/calm-shared"]
-            AUTH["@finos/calm-auth\n(built locally)"]
             CLI["@finos/calm-cli"]
         end
 
@@ -272,15 +247,14 @@ graph TB
             ORG_AUTH["built acme-inhouse-idp-client"]
         end
 
-        AUTH -- "local package build" --> ORG_SRC
-        AUTH -- "dependency" --> CLI
-        ORG_SRC -- "npm install / local workspace link" --> ORG_AUTH
+        ORG_SRC -- "npm install / npm build" --> ORG_AUTH
         ORG_AUTH -- "via configuration directUrlAuth.module integrate with" --> CLI
     end
 
-    style CALM_SRC fill:#e8f4e8,stroke:#2d7a2d
+
     style INHOUSE fill:#e8f0fb,stroke:#3a6bc4
     style ORG fill:#f0f4ff,stroke:#3a6bc4
+
 ```
 
 The required product change is therefore not "implement every possible
