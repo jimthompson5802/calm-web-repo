@@ -53,6 +53,13 @@
       "environment": "local-development"
     },
     {
+      "unique-id": "direct-url-auth-v3-config",
+      "node-type": "data-asset",
+      "name": "Direct URL Auth v3 Config",
+      "description": "The custom-idp/v3 direct URL auth JSON consumed through configPath, such as custom-idp/v3/generated/direct-url-auth.json, holding tokenUrl, clientId, vaultUrl, vaultToken, vaultSecretPath, and the optional vaultSecretField for the local machine-client token request.",
+      "environment": "local-development"
+    },
+    {
       "unique-id": "nginx-static-server",
       "node-type": "service",
       "name": "Nginx Static Web Server",
@@ -177,6 +184,39 @@
           },
           "destination": {
             "node": "vault-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-direct-url-auth-v3-config",
+      "description": "The custom-idp/v3 direct URL auth module reads tokenUrl, clientId, vaultUrl, vaultToken, vaultSecretPath, and the optional vaultSecretField from configPath before requesting the client secret and access token.",
+      "dataClassification": "sensitive",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "direct-url-auth-v3-config"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-keycloak",
+      "description": "The CALM CLI uses the custom-idp/v3 direct URL auth module to request an OAuth client-credentials token from the calm-local Keycloak realm after it retrieves the machine-client secret from Vault.",
+      "dataClassification": "sensitive",
+      "encrypted": true,
+      "protocol": "HTTPS",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "keycloak-service"
           }
         }
       }
@@ -329,6 +369,70 @@
           ]
         }
       }
+    }
+  ],
+  "flows": [
+    {
+      "unique-id": "flow-direct-url-auth-v3",
+      "name": "Fetch Protected Content With Direct URL Auth v3",
+      "description": "The operator runs the CALM CLI, which loads the custom-idp/v3 config, reads the machine-client secret from Vault, requests and caches a client-credentials token from Keycloak, and then uses the bearer token when it fetches protected repository content from nginx.",
+      "metadata": {
+        "auth-example": "custom-idp/v3",
+        "token-cache-behavior": "Reuse cached access token until less than 60 seconds remain before expiry",
+        "secret-cache-behavior": "Reuse the loaded client secret promise for later token refreshes",
+        "secret-source": "Vault KV secret at secret/data/calm/direct-url"
+      },
+      "transitions": [
+        {
+          "relationship-unique-id": "user-to-calm-cli",
+          "sequence-number": 1,
+          "description": "User invokes CALM validation or another protected fetch through the CLI."
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-direct-url-auth-v3-config",
+          "sequence-number": 2,
+          "description": "The v3 direct URL auth plugin loads tokenUrl, clientId, Vault connection settings, and the optional secret field name from configPath."
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-vault-service",
+          "sequence-number": 3,
+          "description": "The plugin requests the machine-client secret from the Vault KV API using the configured Vault token and secret path."
+        },
+        {
+          "relationship-unique-id": "vault-service-to-vault-direct-url-secret",
+          "sequence-number": 4,
+          "description": "Vault reads the secret stored at secret/data/calm/direct-url for the direct URL auth client.",
+          "direction": "source-to-destination"
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-keycloak",
+          "sequence-number": 5,
+          "description": "The plugin sends a client-credentials token request to the calm-local Keycloak token endpoint with the retrieved client secret."
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-keycloak",
+          "sequence-number": 6,
+          "description": "Keycloak returns an access token that the CLI caches until refresh is needed.",
+          "direction": "destination-to-source"
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-nginx",
+          "sequence-number": 7,
+          "description": "The CLI sends the protected repository request to nginx with the Authorization bearer header."
+        },
+        {
+          "relationship-unique-id": "calm-cli-to-nginx",
+          "sequence-number": 8,
+          "description": "Return requested CALM artifact",
+          "direction": "destination-to-source"
+        },
+        {
+          "relationship-unique-id": "user-to-calm-cli",
+          "sequence-number": 9,
+          "description": "Results of the calm validate",
+          "direction": "destination-to-source"
+        }
+      ]
     }
   ]
 }
