@@ -94,6 +94,8 @@ The `make` startup targets do more than launch the local web stack variants. The
 
 ![](docs/images/my-calm-repo-authcerts.png)
 
+![](./docs/images/flow-direct-url-auth-v2-1.png)
+
 **Source Code For Direct URL Auth Plugin**: [v2/src/direct-url-auth.ts](custom-idp/v2/src/direct-url-auth.ts)
 
 **Contents of `~/.calm.json`***:
@@ -126,9 +128,25 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 ### `start-webserver-vaulting` (Oauth2 client-credential authentication with Vault)
 `start-webserver-vaulting` builds on the same HTTPS Keycloak stack as `start-webserver-authcerts`, but seeds the local Keycloak machine-client secret into a HashiCorp Vault dev server and generates a `custom-idp/v3` config that reads the secret from Vault.
 
+**To test run following bash script**:
+
+```
+# To use private self-signed certs
+# export NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt
+#
+# or 
+#
+# To disable certificate validation
+# export NODE_TLS_REJECT_UNAUTHORIZED=0
+
+./scripts/validate-architecture.sh https://my-calm.repo:8443
+```
+
 [CALM Architecture JSON](docs/architecture/start-webserver-vaulting.architecture.json)
 
 ![](./docs/images/my-calm-repo-vaulting.png)
+
+![](./docs/images/flow-direct-url-auth-v3-1.png)
 
 **Source Code For Direct URL Auth Plugin**: [v3/src/direct-url-auth.ts](custom-idp/v3/src/direct-url-auth.ts)
 
