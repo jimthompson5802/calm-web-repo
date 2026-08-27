@@ -1,4 +1,4 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts stop-webserver _prepare-calm-config
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting stop-webserver _prepare-calm-config
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
@@ -38,10 +38,24 @@ start-webserver-authcerts:
 		export CALM_PUBLIC_HOST="$$host"; \
 		echo "Using local stack host: $$host"; \
 		$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmauthcerts.json" _prepare-calm-config; \
-		./scripts/generate-local-certs.sh; \
+		CUSTOM_IDP_CERT_DIR=./custom-idp/v2/certs ./scripts/generate-local-certs.sh; \
 		./scripts/render-keycloak-realm.py; \
 		./scripts/render-direct-url-auth-config.py; \
 		CALM_STATIC_CONTENT_PATH=./static_authcerts docker-compose up -d keycloak oauth2-proxy nginx
+
+
+# start the full auth stack with a Vault-backed direct-url secret
+start-webserver-vaulting:
+	@host="$$(python3 ./scripts/detect_public_host.py)"; \
+		export CALM_PUBLIC_HOST="$$host"; \
+		echo "Using local stack host: $$host"; \
+		$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmvaulting.json" _prepare-calm-config; \
+		CUSTOM_IDP_CERT_DIR=./custom-idp/v3/certs ./scripts/generate-local-certs.sh; \
+		./scripts/render-keycloak-realm.py; \
+		docker-compose up -d vault; \
+		./scripts/bootstrap-vault-direct-url-secret.py; \
+		./scripts/render-direct-url-auth-vault-config.py; \
+		CALM_STATIC_CONTENT_PATH=./static_authcerts docker-compose up -d keycloak oauth2-proxy nginx vault
 
 
 # stop the nginx server and remove compose resources

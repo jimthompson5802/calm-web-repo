@@ -75,3 +75,17 @@ services:
     volumes:
       - ./infra/keycloak/import:/opt/keycloak/data/import:ro
     restart: unless-stopped
+  vault:
+    image: hashicorp/vault:1.19
+    command:
+      - server
+      - -dev
+      - -dev-listen-address=0.0.0.0:8200
+      - -dev-root-token-id=calm-local-vault-root-token
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: calm-local-vault-root-token
+    ports:
+      - 8200:8200
+    restart: unless-stopped

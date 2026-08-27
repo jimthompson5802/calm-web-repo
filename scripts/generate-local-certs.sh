@@ -6,7 +6,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cert_dir="${repo_root}/infra/nginx/certs"
 cert_path="${cert_dir}/localhost.crt"
 key_path="${cert_dir}/localhost.key"
-custom_idp_cert_dir="${repo_root}/custom-idp/v2/certs"
+custom_idp_cert_dir="${CUSTOM_IDP_CERT_DIR:-${repo_root}/custom-idp/v2/certs}"
 custom_idp_cert_path="${custom_idp_cert_dir}/localhost.crt"
 public_host="${CALM_PUBLIC_HOST:-$(python3 "${repo_root}/scripts/detect_public_host.py")}"
 

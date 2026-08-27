@@ -1,0 +1,334 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "start-webserver-vaulting-architecture",
+  "name": "Start Webserver Vaulting Architecture",
+  "description": "Architecture for the make start-webserver-vaulting target, covering the HTTPS nginx, oauth2-proxy, Keycloak, and HashiCorp Vault stack, together with the generated certificates, copied CLI trust certificate, rendered realm import, and generated v3 auth config required for local bearer-token access with Vault-backed secret lookup.",
+  "metadata": {
+    "environment": "local-development",
+    "make-target": "start-webserver-vaulting",
+    "auth-example": "custom-idp/v3",
+    "secret-source": "HashiCorp Vault dev service"
+  },
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A human architect or operator who starts the Vault-backed local stack, follows the generated HTTPS host, and requests repository assets through the authenticated nginx front end.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "calm-cli",
+      "node-type": "service",
+      "name": "CALM CLI",
+      "description": "The CALM CLI process invoked for local validation, using the generated custom-idp v3 direct URL auth module configuration together with the copied localhost certificate for Node trust.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "tls-certificate-assets",
+      "node-type": "data-asset",
+      "name": "TLS Certificate Bundle",
+      "description": "The generated certificate and private key under infra/nginx/certs, used by nginx for TLS termination and by oauth2-proxy as the trusted CA file for the local issuer.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "keycloak-realm-import",
+      "node-type": "data-asset",
+      "name": "Keycloak Realm Import",
+      "description": "The rendered Keycloak realm import generated from infra/keycloak/calm-local-realm.template.json, provisioning the calm-local realm, OAuth clients, and local test credentials for the auth stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "repository-static-content-authcerts",
+      "node-type": "data-asset",
+      "name": "Static Content Tree (HTTPS Auth)",
+      "description": "The static_authcerts content tree mounted directly into nginx so repository architectures, patterns, standards, controls, and related documentation are served through the authenticated HTTPS stack.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "vault-direct-url-secret",
+      "node-type": "data-asset",
+      "name": "Vault Direct URL Secret",
+      "description": "The local Vault KV secret stored at secret/data/calm/direct-url, seeded from KEYCLOAK_DIRECT_URL_CLIENT_SECRET and read by the custom-idp v3 module as the OAuth machine-client secret.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "nginx-static-server",
+      "node-type": "service",
+      "name": "Nginx Static Web Server",
+      "description": "The nginx Compose service started by make start-webserver-vaulting, serving repository assets over authenticated HTTPS on port 8443, exposing oauth2-proxy under /oauth2/, and reverse proxying Keycloak under /keycloak/.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "nginx-https",
+          "host": "localhost",
+          "port": 8443
+        }
+      ]
+    },
+    {
+      "unique-id": "oauth2-proxy-service",
+      "node-type": "service",
+      "name": "OAuth2 Proxy",
+      "description": "The oauth2-proxy container that enforces bearer-token or OIDC-backed access for protected static content and exchanges identity data with Keycloak for the local auth flow.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "oauth2-proxy-http",
+          "host": "oauth2-proxy",
+          "port": 4180
+        }
+      ]
+    },
+    {
+      "unique-id": "keycloak-service",
+      "node-type": "service",
+      "name": "Keycloak Identity Provider",
+      "description": "The Keycloak container that runs the calm-local realm, serves OIDC metadata and token endpoints, and backs the local admin console exposed through nginx.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "keycloak-http",
+          "host": "keycloak",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "vault-service",
+      "node-type": "service",
+      "name": "HashiCorp Vault",
+      "description": "The Vault dev container started by make start-webserver-vaulting, exposing the local KV API on port 8200 and holding the machine-client secret consumed by the custom-idp v3 example.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "vault-http",
+          "host": "127.0.0.1",
+          "port": 8200
+        }
+      ]
+    },
+    {
+      "unique-id": "docker-compose-container",
+      "node-type": "container",
+      "name": "MY-CALM.REPO",
+      "description": "A container grouping representing the local MY-CALM.REPO runtime started by the Vault-backed auth target.",
+      "environment": "local-development"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "user-to-calm-cli",
+      "description": "Run calm validate.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": [
+            "calm-cli"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-nginx",
+      "description": "Retrieve CALM artifact for validation.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "protocol": "HTTPS",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "nginx-static-server"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-keycloak-realm-import",
+      "description": "The startup flow injects the detected host into the generated Keycloak realm import so local issuer and redirect settings match the HTTPS origin.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "keycloak-realm-import"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-vault-service",
+      "description": "The startup flow waits for the local Vault API and then seeds the direct URL machine-client secret before validation uses the v3 auth module.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "protocol": "HTTP",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "calm-cli"
+          },
+          "destination": {
+            "node": "vault-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "vault-service-to-vault-direct-url-secret",
+      "description": "The Vault dev service stores the local KV secret at secret/data/calm/direct-url for the custom-idp v3 machine-client lookup.",
+      "dataClassification": "sensitive",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "vault-service"
+          },
+          "destination": {
+            "node": "vault-direct-url-secret"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-authcerts-static-content",
+      "description": "The nginx server serves static repository assets from the mounted static_authcerts content tree.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "repository-static-content-authcerts"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-tls-certificate-assets",
+      "description": "Nginx terminates HTTPS with the generated local certificate and private key mounted from infra/nginx/certs.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "tls-certificate-assets"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-tls-certificate-assets",
+      "description": "Oauth2-proxy trusts the generated local CA certificate so it can validate the public Keycloak issuer exposed through nginx.",
+      "dataClassification": "internal",
+      "encrypted": true,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "oauth2-proxy-service"
+          },
+          "destination": {
+            "node": "tls-certificate-assets"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-oauth2-proxy",
+      "description": "Nginx routes authentication callbacks and auth checks under /oauth2/ to oauth2-proxy so protected static content requires a valid bearer token or OIDC session.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "oauth2-proxy-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-keycloak",
+      "description": "Oauth2-proxy validates JWTs, redeems tokens, and reads OIDC metadata against the calm-local Keycloak realm during the local authentication flow.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "oauth2-proxy-service"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "nginx-to-keycloak",
+      "description": "Nginx exposes Keycloak's admin console and OIDC endpoints under /keycloak/ so the local HTTPS origin fronts both static content and identity flows.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "nginx-static-server"
+          },
+          "destination": {
+            "node": "keycloak-service"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "keycloak-to-realm-import",
+      "description": "Keycloak loads the generated calm-local realm import at startup so the local OAuth clients, service account, and test credentials are available.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "keycloak-service"
+          },
+          "destination": {
+            "node": "keycloak-realm-import"
+          }
+        }
+      }
+    },
+    {
+      "unique-id": "docker-compose-vaulting-composed-of",
+      "description": "The Vault-backed docker-compose startup groups the started services together with the mounted and generated data assets those services use for HTTPS serving, OIDC auth, secret lookup, and static content delivery.",
+      "dataClassification": "internal",
+      "encrypted": false,
+      "relationship-type": {
+        "composed-of": {
+          "container": "docker-compose-container",
+          "nodes": [
+            "keycloak-service",
+            "oauth2-proxy-service",
+            "nginx-static-server",
+            "vault-service",
+            "repository-static-content-authcerts",
+            "tls-certificate-assets",
+            "keycloak-realm-import",
+            "vault-direct-url-secret"
+          ]
+        }
+      }
+    }
+  ]
+}
