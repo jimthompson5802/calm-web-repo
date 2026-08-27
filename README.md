@@ -132,7 +132,7 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 
 ```
 # To use private self-signed certs
-# export NODE_EXTRA_CA_CERTS=custom-idp/v2/certs/localhost.crt
+# export NODE_EXTRA_CA_CERTS=custom-idp/v3/certs/localhost.crt
 #
 # or 
 #
