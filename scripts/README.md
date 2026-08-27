@@ -41,6 +41,17 @@ The direct-url auth config used by the supported CLI module remains minimal:
 - `clientId`
 - `clientSecret`
 
+For the Vault-backed example started by `make start-webserver-vaulting`, the helper scripts also:
+
+- start a local HashiCorp Vault dev server on `http://127.0.0.1:8200`
+- seed `secret/data/calm/direct-url` with the `KEYCLOAK_DIRECT_URL_CLIENT_SECRET` value from `.env`
+- generate `custom-idp/v3/generated/direct-url-auth.json` with Vault lookup settings instead of inline `clientSecret`
+
+For both auth-enabled direct URL examples, the certificate helper copies `infra/nginx/certs/localhost.crt` into the matching example cert directory:
+
+- `make start-webserver-authcerts` -> `custom-idp/v2/certs/localhost.crt`
+- `make start-webserver-vaulting` -> `custom-idp/v3/certs/localhost.crt`
+
 TLS trust for the Node-based CLI flow is configured outside the JSON, for example with `NODE_EXTRA_CA_CERTS`. The `--cacert` flags above are curl-only trust settings for these manual checks.
 
 You can then fetch a protected file with that bearer token:

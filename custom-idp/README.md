@@ -1,11 +1,14 @@
 # Direct URL Auth Examples
 
-This directory contains two minimal TypeScript examples of a `directUrlAuth.module`:
+This directory contains three minimal TypeScript examples of a `directUrlAuth.module`:
 
 - [`v1/`](./v1/) builds the `direct-url-auth-v1` example
 - [`v2/`](./v2/) builds the `direct-url-auth-v2` example
+- [`v3/`](./v3/) builds the `direct-url-auth-v3` example
 
 For the local `setup-keycloak-web` stack, `v2` is the supported module for `make start-webserver-authcerts`. It obtains a Keycloak access token with the OAuth 2.0 client-credentials grant and is wired to the generated local config written by that target. The supported config surface is intentionally limited to `tokenUrl`, `clientId`, and `clientSecret`.
+
+`v3` is the Vault-backed variant for `make start-webserver-vaulting`. It keeps the same OAuth token flow, but it reads the client secret from a local HashiCorp Vault dev server instead of storing the secret inline in the generated auth JSON.
 
 Each example has the same structure:
 
@@ -19,6 +22,14 @@ Build the `v2` module:
 
 ```bash
 cd custom-idp/v2
+npm install
+npm test
+```
+
+Build the `v3` module:
+
+```bash
+cd custom-idp/v3
 npm install
 npm test
 ```
@@ -77,6 +88,34 @@ The generated JSON has this shape:
 ```
 
 No other direct-URL auth parameters are supported by the local `v2` example.
+
+`make start-webserver-authcerts` also copies the generated `localhost.crt` file into `custom-idp/v2/certs/localhost.crt`.
+
+For the Vault-backed stack, point `~/.calmvaulting.json` at the built `v3` JavaScript file and the generated local config:
+
+```json
+{
+  "directUrlAuth": {
+    "module": "/absolute/path/to/setup-keycloak-web/custom-idp/v3/dist/direct-url-auth.js",
+    "configPath": "/absolute/path/to/setup-keycloak-web/custom-idp/v3/generated/direct-url-auth.json"
+  }
+}
+```
+
+The generated `v3` config contains:
+
+```json
+{
+  "tokenUrl": "https://my-calm.repo:8443/keycloak/realms/calm-local/protocol/openid-connect/token",
+  "clientId": "calm-direct-url",
+  "vaultUrl": "http://127.0.0.1:8200",
+  "vaultToken": "calm-local-vault-root-token",
+  "vaultSecretPath": "secret/data/calm/direct-url",
+  "vaultSecretField": "clientSecret"
+}
+```
+
+`make start-webserver-vaulting` also copies the generated `localhost.crt` file into `custom-idp/v3/certs/localhost.crt`.
 
 If the token endpoint or protected direct URL uses a private or self-signed CA, configure Node trust outside the JSON before you run Calm, for example with `NODE_EXTRA_CA_CERTS`.
 

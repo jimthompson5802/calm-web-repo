@@ -1,0 +1,8 @@
+{
+  "tokenUrl": "https://idp.example.com/oauth/token",
+  "clientId": "calm-direct-url",
+  "vaultUrl": "http://127.0.0.1:8200",
+  "vaultToken": "replace-me-dev-token",
+  "vaultSecretPath": "secret/data/calm/direct-url",
+  "vaultSecretField": "clientSecret"
+}
