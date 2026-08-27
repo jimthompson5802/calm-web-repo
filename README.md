@@ -126,6 +126,8 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 ### `start-webserver-vaulting` (Oauth2 client-credential authentication with Vault)
 `start-webserver-vaulting` builds on the same HTTPS Keycloak stack as `start-webserver-authcerts`, but seeds the local Keycloak machine-client secret into a HashiCorp Vault dev server and generates a `custom-idp/v3` config that reads the secret from Vault.
 
+![](./docs/images/my-calm-repo-vaulting.png)
+
 **Source Code For Direct URL Auth Plugin**: [v3/src/direct-url-auth.ts](custom-idp/v3/src/direct-url-auth.ts)
 
 **Contents of `~/.calm.json`***:
