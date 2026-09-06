@@ -187,13 +187,33 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 - `https://<host>:8443` serves `static_authcerts/` with bearer-token authentication.
 - `http://<host>:8080` serves `static_http/` without authentication, including `/architectures/calm-1.json` and the anonymous `/healthz` endpoint.
 
+**To test run following bash script**:
+
+```
+# To use private self-signed certs
+# export NODE_EXTRA_CA_CERTS=custom-idp/v3/certs/localhost.crt
+#
+# or 
+#
+# To disable certificate validation
+# export NODE_TLS_REJECT_UNAUTHORIZED=0
+
+./scripts/validate-architecture.sh https://my-calm.repo:8443
+```
+
+[CALM Architecture JSON](docs/architecture/start-webserver-mixed.architecture.json)
+
+![](./docs/images/my-calm-repo-mixed.png)
+
+
+
 The HTTP service mounts `static_http/` read-only at `/usr/share/nginx/html` and reuses the existing noauth nginx configuration. Its mounts and port are fixed independently of the authenticated nginx service's environment overrides.
 
 Mixed mode inherits the Vault setup, generated v3 auth configuration and certificates, and `~/.calm.json` symlink to `~/.calmvaulting.json`. Use the same prerequisites and HTTPS client setup as vaulting mode.
 
 Stop an existing mode before switching to avoid port conflicts, particularly on `8080`:
 
-```sh
+```
 make stop-webserver
 make start-webserver-mixed
 ```
