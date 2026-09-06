@@ -458,6 +458,7 @@ Notes:
 - `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://my-calm.repo:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make start-webserver-vaulting` reuses the authcerts HTTPS stack, starts a local Vault dev server, seeds the machine-client secret, and generates the `custom-idp/v3` config.
+- `make start-webserver-mixed` starts the Vault-backed HTTPS stack on `https://<host>:8443` and an independent noauth nginx service serving `static_http/` on `http://<host>:8080`.
 - Both auth-enabled direct URL targets copy `infra/nginx/certs/localhost.crt` into the matching example cert directory for local CLI trust setup.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 
@@ -476,7 +477,7 @@ Notes:
 
 ## Example `calm validate` commands
 
-`make start-webserver-noauth` serves CALM artifacts over `http://my-calm.repo:8080` with only the `allowedRemoteHosts` protection. `make start-webserver-authonly` adds authentication protection by requiring a hard-code `Header` with `Authorization: XYZ` and uses `http://my-calm.repo:8080`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443` along with `allowedRemoteHosts` protection. `make start-webserver-vaulting` serves the same HTTPS stack, but uses the Vault-backed `custom-idp/v3` example for the machine-client secret.
+`make start-webserver-noauth` serves CALM artifacts over `http://my-calm.repo:8080` with only the `allowedRemoteHosts` protection. `make start-webserver-authonly` adds authentication protection by requiring a hard-code `Header` with `Authorization: XYZ` and uses `http://my-calm.repo:8080`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443` along with `allowedRemoteHosts` protection. `make start-webserver-vaulting` serves the same HTTPS stack, but uses the Vault-backed `custom-idp/v3` example for the machine-client secret. `make start-webserver-mixed` makes that Vault-backed HTTPS endpoint and the unauthenticated HTTP endpoint available together.
 
 Sample commands after `make-start-noauth` and `make start-webserver-authonly`:
 
@@ -490,7 +491,7 @@ calm validate -a http://my-calm.repo:8080/architectures/generated-webapp.json \
   -f pretty
 ```
 
-Sample commands after `make start-webserver-authcerts` or `make start-webserver-vaulting`:
+Sample HTTPS commands after `make start-webserver-authcerts`, `make start-webserver-vaulting`, or `make start-webserver-mixed`:
 
 ```sh
 # assumes NODE_EXTRA_CA_CERTS or NODE_TLS_REJECT_UNAUTHORIZED are environment variables
