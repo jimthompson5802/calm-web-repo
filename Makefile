@@ -1,4 +1,4 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting stop-webserver _prepare-calm-config
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting start-webserver-mixed stop-webserver _prepare-calm-config
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
@@ -58,6 +58,11 @@ start-webserver-vaulting:
 		CALM_STATIC_CONTENT_PATH=./static_authcerts docker-compose up -d keycloak oauth2-proxy nginx vault
 
 
-# stop the nginx server and remove compose resources
+# start the Vault-backed auth stack alongside an unauthenticated HTTP server
+start-webserver-mixed: start-webserver-vaulting
+	docker-compose up -d --no-deps nginx-noauth
+
+
+# stop the nginx servers and remove compose resources
 stop-webserver:
 	docker-compose down

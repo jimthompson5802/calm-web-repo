@@ -180,6 +180,26 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 
 The startup flow also copies the generated `infra/nginx/certs/localhost.crt` file into `custom-idp/v3/certs/localhost.crt`.
 
+### `start-webserver-mixed` (Vault-backed HTTPS and unauthenticated HTTP)
+
+`start-webserver-mixed` runs `start-webserver-vaulting`, then starts a second nginx service named `nginx-noauth`. Both endpoints are available together:
+
+- `https://<host>:8443` serves `static_authcerts/` with bearer-token authentication.
+- `http://<host>:8080` serves `static_http/` without authentication, including `/architectures/calm-1.json` and the anonymous `/healthz` endpoint.
+
+The HTTP service mounts `static_http/` read-only at `/usr/share/nginx/html` and reuses the existing noauth nginx configuration. Its mounts and port are fixed independently of the authenticated nginx service's environment overrides.
+
+Mixed mode inherits the Vault setup, generated v3 auth configuration and certificates, and `~/.calm.json` symlink to `~/.calmvaulting.json`. Use the same prerequisites and HTTPS client setup as vaulting mode.
+
+Stop an existing mode before switching to avoid port conflicts, particularly on `8080`:
+
+```sh
+make stop-webserver
+make start-webserver-mixed
+```
+
+Use `make stop-webserver` to stop both nginx services and the rest of the stack.
+
 ## Negative test cases
 
 Given the setup with `make start-webserver-authcerts`, here are example of negative tests.  The output shown are the trimmed down `--verbose`
@@ -496,7 +516,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate \
 
 1. Copy `.env.example` to `.env`.
 2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`.
-3. Needed only for `start-webserver-authcerts` and `start-webserver-vaulting`, assuming use of KeyCloak, set local-only values for:
+3. Needed for `start-webserver-authcerts`, `start-webserver-vaulting`, and `start-webserver-mixed`, assuming use of KeyCloak, set local-only values for:
    - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
    - `OAUTH2_PROXY_CLIENT_SECRET`
@@ -511,7 +531,10 @@ make start-webserver-noauth
 make start-webserver-authonly
 make start-webserver-authcerts
 make start-webserver-vaulting
+make start-webserver-mixed
 ```
+
+Run `make stop-webserver` before switching modes to avoid port conflicts.
 
 `make start-webserver-noauth` will:
 
@@ -556,6 +579,8 @@ make start-webserver-vaulting
 - start `vault`, `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through bearer-token-authenticated HTTPS
 
+`make start-webserver-mixed` will run all the vaulting steps above, then start `nginx-noauth` to serve `static_http/` without authentication over HTTP on port `8080`, alongside authenticated HTTPS on port `8443`.
+
 If you need a cookie secret, generate one with:
 
 ```sh
@@ -594,6 +619,7 @@ Each startup target now selects the active CALM CLI config by repointing `~/.cal
 - `make start-webserver-authonly` -> `~/.calmauthonly.json`
 - `make start-webserver-authcerts` -> `~/.calmauthcerts.json`
 - `make start-webserver-vaulting` -> `~/.calmvaulting.json`
+- `make start-webserver-mixed` -> `~/.calmvaulting.json`
 
 If `~/.calm.json` is already a symlink, the target replaces it. If it exists as a regular file, startup fails instead of overwriting it.
 
