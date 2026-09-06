@@ -210,12 +210,12 @@
       }
     },
     {
-      "unique-id": "user-to-noauth-nginx",
-      "description": "The operator can request public repository content or /healthz through the independent HTTP endpoint without authentication.",
+      "unique-id": "calm-cli-to-noauth-nginx",
+      "description": "The CALM CLI can request public repository content or /healthz through the independent HTTP endpoint without authentication.",
       "protocol": "HTTP",
       "relationship-type": {
         "connects": {
-          "source": {"node": "repository-user"},
+          "source": {"node": "calm-cli"},
           "destination": {"node": "noauth-nginx"}
         }
       }
@@ -320,7 +320,7 @@
       "name": "Fetch Public HTTP Content",
       "description": "An operator directly fetches static_http content or the anonymous health endpoint through the independent HTTP nginx service; this path does not involve Vault, Keycloak, or oauth2-proxy.",
       "transitions": [
-        {"relationship-unique-id": "user-to-noauth-nginx", "sequence-number": 1, "description": "The operator requests public content or /healthz over HTTP."},
+        {"relationship-unique-id": "calm-cli-to-noauth-nginx", "sequence-number": 1, "description": "The CALM CLI requests public content or /healthz over HTTP."},
         {"relationship-unique-id": "noauth-nginx-to-unauthenticated-content", "sequence-number": 2, "description": "nginx-noauth reads the requested artifact from static_http."}
       ]
     }
