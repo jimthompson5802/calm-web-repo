@@ -299,8 +299,7 @@ Loader FileSystemDocumentLoader FAILED with error: Document with id [https://you
 Loader DirectUrlDocumentLoader FAILED with error: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
 
 error [calm-validate]:    An error occurred while validating: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
-error [calm-validate]:    Cause: Hostname/IP does not match certificate's altnames: Host: your-calm.repo. is not in the cert's altnames: DNS:localhost, DNS:host.docker.internal, IP Address:127.0.0.1, DNS:my-calm.repo
-error [calm-validate]:    Caused by: Hostname/IP does not match certificate's altnames: Host: your-calm.repo. is not in the cert's altnames: DNS:localhost, DNS:host.docker.internal, IP Address:127.0.0.1, DNS:my-calm.repo
+error [calm-validate]:    Cause: TLS certificate verification failed for your-calm.repo.
 debug [calm-validate]:    UNKNOWN: Failed to load document from URL: https://your-calm.repo:8443/architectures/calm-1.json
     at DirectUrlDocumentLoader.loadMissingDocument (/Users/jim/Desktop/finos/wt/iss2975-idp-directurl/cli/dist/index.js:94194:17)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
