@@ -2,8 +2,6 @@ import * as http from 'node:http';
 import * as https from 'node:https';
 import { readFile } from 'node:fs/promises';
 
-const AUTHORIZED_URL = 'https://my-calm.repo:8443/';
-
 type AuthConfig = {
     tokenUrl: string;
     clientId: string;
@@ -48,9 +46,6 @@ export default class DirectUrlAuthPlugin {
     }
 
     async getAuthHeaders(url: string, _requestBody: unknown): Promise<Record<string, string>> {
-        if (!url.startsWith(AUTHORIZED_URL)) {
-            return {};
-        }
 
         return {
             Authorization: `Bearer ${await this.getAccessToken()}`
