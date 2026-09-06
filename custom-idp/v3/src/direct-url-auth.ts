@@ -2,6 +2,8 @@ import * as http from 'node:http';
 import * as https from 'node:https';
 import { readFile } from 'node:fs/promises';
 
+const AUTHORIZED_URL = 'https://my-calm.repo:8443/';
+
 type AuthConfig = {
     tokenUrl: string;
     clientId: string;
@@ -32,7 +34,8 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default class DirectUrlAuthPlugin {
-    private readonly configPromise: Promise<AuthConfig>;
+    private readonly configPath: string;
+    private configPromise?: Promise<AuthConfig>;
     private cachedToken?: CachedToken;
     private clientSecretPromise?: Promise<string>;
 
@@ -41,10 +44,14 @@ export default class DirectUrlAuthPlugin {
             throw new Error('Direct URL auth configPath is required');
         }
 
-        this.configPromise = this.loadConfig(configPath);
+        this.configPath = configPath;
     }
 
-    async getAuthHeaders(_url: string, _requestBody: unknown): Promise<Record<string, string>> {
+    async getAuthHeaders(url: string, _requestBody: unknown): Promise<Record<string, string>> {
+        if (!url.startsWith(AUTHORIZED_URL)) {
+            return {};
+        }
+
         return {
             Authorization: `Bearer ${await this.getAccessToken()}`
         };
@@ -55,7 +62,7 @@ export default class DirectUrlAuthPlugin {
             return this.cachedToken.accessToken;
         }
 
-        const config = await this.configPromise;
+        const config = await this.getConfig();
         const body = new URLSearchParams();
         body.set('client_id', config.clientId);
         body.set('client_secret', await this.getClientSecret(config));
@@ -74,6 +81,14 @@ export default class DirectUrlAuthPlugin {
         };
 
         return this.cachedToken.accessToken;
+    }
+
+    private async getConfig(): Promise<AuthConfig> {
+        if (!this.configPromise) {
+            this.configPromise = this.loadConfig(this.configPath);
+        }
+
+        return this.configPromise;
     }
 
     private async getClientSecret(config: AuthConfig): Promise<string> {

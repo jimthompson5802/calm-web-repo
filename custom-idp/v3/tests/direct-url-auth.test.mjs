@@ -140,6 +140,34 @@ test("reads the client secret from Vault and requests a client-credentials token
   });
 });
 
+test("returns no headers and makes no auth requests for a non-CALM URL", async () => {
+  await withTempDir(async (root) => {
+    const configPath = path.join(root, "unused-direct-url-auth.json");
+    const plugin = new DirectUrlAuthPlugin(configPath);
+    let httpCalls = 0;
+    let httpsCalls = 0;
+
+    await withMockRequests({
+      httpHandler: () => {
+        httpCalls += 1;
+        throw new Error("Vault should not be called");
+      },
+      httpsHandler: () => {
+        httpsCalls += 1;
+        throw new Error("OAuth should not be called");
+      },
+    }, async () => {
+      assert.deepEqual(
+        await plugin.getAuthHeaders("https://my-calm.repo:8444/architectures/calm-1.json"),
+        {},
+      );
+    });
+
+    assert.equal(httpCalls, 0);
+    assert.equal(httpsCalls, 0);
+  });
+});
+
 test("caches the OAuth token and avoids repeated Vault reads until token refresh is needed", async () => {
   await withTempDir(async (root) => {
     const configPath = await writeConfig(root);

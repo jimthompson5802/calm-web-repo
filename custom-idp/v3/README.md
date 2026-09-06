@@ -8,7 +8,7 @@ The plugin exports a class that implements:
 getAuthHeaders(url: string, requestBody: unknown): Promise<Record<string, string>>
 ```
 
-It gets an OAuth client-credentials token and returns it as an `Authorization` header. The OAuth client secret is read from HashiCorp Vault instead of being stored inline in the auth JSON.
+It gets an OAuth client-credentials token and returns it as an `Authorization` header only for URLs that begin with the exact, case-sensitive prefix `https://my-calm.repo:8443/`. For all other URLs, it returns an empty header object and does not read the config, Vault secret, or OAuth token. The OAuth client secret is read from HashiCorp Vault instead of being stored inline in the auth JSON.
 
 ## Config
 
