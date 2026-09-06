@@ -1,0 +1,328 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "start-webserver-mixed-architecture",
+  "name": "Start Webserver Mixed Architecture",
+  "description": "Runtime architecture for make start-webserver-mixed. It starts the Vault-backed, bearer-token-protected HTTPS repository endpoint and an independent unauthenticated HTTP nginx endpoint together.",
+  "metadata": {
+    "environment": "local-development",
+    "make-target": "start-webserver-mixed",
+    "authenticated-endpoint": "https://my-calm.repo:8443",
+    "unauthenticated-endpoint": "http://my-calm.repo:8080",
+    "auth-example": "custom-idp/v3"
+  },
+  "nodes": [
+    {
+      "unique-id": "repository-user",
+      "node-type": "actor",
+      "name": "Architect",
+      "description": "A local operator who starts the mixed stack and requests CALM artifacts from either the authenticated HTTPS or unauthenticated HTTP endpoint.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "calm-cli",
+      "node-type": "service",
+      "name": "CALM CLI",
+      "description": "The local CALM CLI using the custom-idp v3 direct URL auth module to obtain a bearer token for eligible HTTPS repository requests.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "authenticated-static-content",
+      "node-type": "data-asset",
+      "name": "Static Content Tree (HTTPS Auth)",
+      "description": "The static_authcerts repository content tree mounted read-only into the authenticated nginx service.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "unauthenticated-static-content",
+      "node-type": "data-asset",
+      "name": "Static Content Tree (HTTP)",
+      "description": "The static_http repository content tree mounted read-only into nginx-noauth and served without authentication.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "tls-certificate-assets",
+      "node-type": "data-asset",
+      "name": "TLS Certificate Bundle",
+      "description": "The generated local certificate and private key mounted into authenticated nginx for TLS termination and into oauth2-proxy for issuer trust.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "direct-url-auth-v3-config",
+      "node-type": "data-asset",
+      "name": "Direct URL Auth v3 Config",
+      "description": "The generated custom-idp/v3 configuration that identifies the Keycloak token endpoint and the Vault secret lookup used for authenticated HTTPS requests.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "vault-direct-url-secret",
+      "node-type": "data-asset",
+      "name": "Vault Direct URL Secret",
+      "description": "The local Vault KV secret at secret/data/calm/direct-url containing the Keycloak machine-client secret.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "authenticated-nginx",
+      "node-type": "service",
+      "name": "Authenticated Nginx",
+      "description": "The nginx Compose service that serves static_authcerts over HTTPS on port 8443 and delegates protected-content checks to oauth2-proxy.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "authenticated-nginx-https",
+          "host": "my-calm.repo",
+          "port": 8443
+        }
+      ]
+    },
+    {
+      "unique-id": "noauth-nginx",
+      "node-type": "service",
+      "name": "Unauthenticated Nginx",
+      "description": "The independent nginx-noauth Compose service that serves static_http and the anonymous /healthz endpoint over HTTP on port 8080.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "noauth-nginx-http",
+          "host": "my-calm.repo",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "oauth2-proxy-service",
+      "node-type": "service",
+      "name": "OAuth2 Proxy",
+      "description": "The oauth2-proxy service that validates bearer tokens or OIDC sessions before authenticated nginx serves protected static content.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "oauth2-proxy-http",
+          "host": "oauth2-proxy",
+          "port": 4180
+        }
+      ]
+    },
+    {
+      "unique-id": "keycloak-service",
+      "node-type": "service",
+      "name": "Keycloak Identity Provider",
+      "description": "The Keycloak service that issues client-credentials access tokens and provides OIDC identity services for the authenticated HTTPS path.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "keycloak-http",
+          "host": "keycloak",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "vault-service",
+      "node-type": "service",
+      "name": "HashiCorp Vault",
+      "description": "The Vault dev service that exposes the local KV API on port 8200 for the custom-idp v3 secret lookup.",
+      "environment": "local-development",
+      "interfaces": [
+        {
+          "unique-id": "vault-http",
+          "host": "127.0.0.1",
+          "port": 8200
+        }
+      ]
+    },
+    {
+      "unique-id": "your-calm-repo-container",
+      "node-type": "container",
+      "name": "YOUR-CALM.REPO",
+      "description": "The unauthenticated HTTP runtime within the mixed Compose startup.",
+      "environment": "local-development"
+    },
+    {
+      "unique-id": "my-calm-repo-container",
+      "node-type": "container",
+      "name": "MY-CALM.REPO",
+      "description": "The Vault-backed authenticated HTTPS runtime within the mixed Compose startup.",
+      "environment": "local-development"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "user-to-calm-cli",
+      "description": "Run CALM validation or another local repository request.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "repository-user",
+          "nodes": ["calm-cli"]
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-direct-url-auth-config",
+      "description": "The direct URL auth module reads its generated v3 configuration before an eligible authenticated request.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "calm-cli"},
+          "destination": {"node": "direct-url-auth-v3-config"}
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-vault",
+      "description": "The v3 direct URL auth module reads the machine-client secret from the local Vault API.",
+      "protocol": "HTTP",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "calm-cli"},
+          "destination": {"node": "vault-service"}
+        }
+      }
+    },
+    {
+      "unique-id": "vault-to-direct-url-secret",
+      "description": "Vault stores the machine-client secret at secret/data/calm/direct-url.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "vault-service"},
+          "destination": {"node": "vault-direct-url-secret"}
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-keycloak",
+      "description": "The v3 direct URL auth module requests a client-credentials access token from Keycloak after reading the Vault secret.",
+      "protocol": "HTTPS",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "calm-cli"},
+          "destination": {"node": "keycloak-service"}
+        }
+      }
+    },
+    {
+      "unique-id": "calm-cli-to-authenticated-nginx",
+      "description": "The CALM CLI requests repository content through HTTPS with the bearer token obtained by the v3 direct URL auth module.",
+      "protocol": "HTTPS",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "calm-cli"},
+          "destination": {"node": "authenticated-nginx"}
+        }
+      }
+    },
+    {
+      "unique-id": "user-to-noauth-nginx",
+      "description": "The operator can request public repository content or /healthz through the independent HTTP endpoint without authentication.",
+      "protocol": "HTTP",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "repository-user"},
+          "destination": {"node": "noauth-nginx"}
+        }
+      }
+    },
+    {
+      "unique-id": "authenticated-nginx-to-authenticated-content",
+      "description": "Authenticated nginx serves repository artifacts from the mounted static_authcerts tree.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "authenticated-nginx"},
+          "destination": {"node": "authenticated-static-content"}
+        }
+      }
+    },
+    {
+      "unique-id": "noauth-nginx-to-unauthenticated-content",
+      "description": "nginx-noauth serves repository artifacts from the mounted static_http tree.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "noauth-nginx"},
+          "destination": {"node": "unauthenticated-static-content"}
+        }
+      }
+    },
+    {
+      "unique-id": "authenticated-nginx-to-tls-assets",
+      "description": "Authenticated nginx terminates HTTPS with the generated local TLS certificate and private key.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "authenticated-nginx"},
+          "destination": {"node": "tls-certificate-assets"}
+        }
+      }
+    },
+    {
+      "unique-id": "authenticated-nginx-to-oauth2-proxy",
+      "description": "Authenticated nginx delegates protected-content authorization checks and OAuth callback handling to oauth2-proxy.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "authenticated-nginx"},
+          "destination": {"node": "oauth2-proxy-service"}
+        }
+      }
+    },
+    {
+      "unique-id": "oauth2-proxy-to-keycloak",
+      "description": "oauth2-proxy validates local bearer tokens and OIDC identity data against Keycloak.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "oauth2-proxy-service"},
+          "destination": {"node": "keycloak-service"}
+        }
+      }
+    },
+    {
+      "unique-id": "your-calm-repo-composed-of",
+      "description": "YOUR-CALM.REPO contains the unauthenticated nginx service and its static content tree.",
+      "relationship-type": {
+        "composed-of": {
+          "container": "your-calm-repo-container",
+          "nodes": [
+            "noauth-nginx",
+            "unauthenticated-static-content"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "my-calm-repo-composed-of",
+      "description": "MY-CALM.REPO contains the remaining authenticated runtime services and their supporting assets.",
+      "relationship-type": {
+        "composed-of": {
+          "container": "my-calm-repo-container",
+          "nodes": [
+            "authenticated-nginx",
+            "oauth2-proxy-service",
+            "keycloak-service",
+            "vault-service",
+            "authenticated-static-content",
+            "tls-certificate-assets",
+            "vault-direct-url-secret"
+          ]
+        }
+      }
+    }
+  ],
+  "flows": [
+    {
+      "unique-id": "fetch-protected-content",
+      "name": "Fetch Protected HTTPS Content",
+      "description": "The CALM CLI loads its v3 auth configuration, retrieves the client secret from Vault, obtains a Keycloak bearer token, and fetches protected static content over HTTPS.",
+      "transitions": [
+        {"relationship-unique-id": "user-to-calm-cli", "sequence-number": 1, "description": "The operator invokes a CALM command."},
+        {"relationship-unique-id": "calm-cli-to-direct-url-auth-config", "sequence-number": 2, "description": "The CLI loads direct URL auth configuration."},
+        {"relationship-unique-id": "calm-cli-to-vault", "sequence-number": 3, "description": "The auth module reads the machine-client secret."},
+        {"relationship-unique-id": "calm-cli-to-keycloak", "sequence-number": 4, "description": "The auth module obtains a client-credentials access token."},
+        {"relationship-unique-id": "calm-cli-to-authenticated-nginx", "sequence-number": 5, "description": "The CLI retrieves a protected artifact with its bearer token."}
+      ]
+    },
+    {
+      "unique-id": "fetch-public-content",
+      "name": "Fetch Public HTTP Content",
+      "description": "An operator directly fetches static_http content or the anonymous health endpoint through the independent HTTP nginx service; this path does not involve Vault, Keycloak, or oauth2-proxy.",
+      "transitions": [
+        {"relationship-unique-id": "user-to-noauth-nginx", "sequence-number": 1, "description": "The operator requests public content or /healthz over HTTP."},
+        {"relationship-unique-id": "noauth-nginx-to-unauthenticated-content", "sequence-number": 2, "description": "nginx-noauth reads the requested artifact from static_http."}
+      ]
+    }
+  ]
+}
