@@ -18,7 +18,16 @@ sync_custom_idp_cert() {
 }
 
 if [[ -f "${cert_path}" && -f "${key_path}" ]]; then
-  if openssl x509 -in "${cert_path}" -noout -text 2>/dev/null | grep -Fq "${public_host}"; then
+  certificate_text="$(openssl x509 -in "${cert_path}" -noout -text 2>/dev/null || true)"
+  certificate_has_required_hosts=true
+  for required_host in "${public_host}" my-calm.repo your-calm.repo; do
+    if ! grep -Fq "${required_host}" <<<"${certificate_text}"; then
+      certificate_has_required_hosts=false
+      break
+    fi
+  done
+
+  if [[ "${certificate_has_required_hosts}" == true ]]; then
     sync_custom_idp_cert
     exit 0
   fi
@@ -30,7 +39,7 @@ trap 'rm -f "${tmp_config}"' EXIT
 if [[ "${public_host}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
   public_host_alt_name="IP.2 = ${public_host}"
 else
-  public_host_alt_name="DNS.3 = ${public_host}"
+  public_host_alt_name="DNS.5 = ${public_host}"
 fi
 
 cat > "${tmp_config}" <<EOF
@@ -49,6 +58,8 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = host.docker.internal
+DNS.3 = my-calm.repo
+DNS.4 = your-calm.repo
 IP.1 = 127.0.0.1
 $public_host_alt_name
 EOF

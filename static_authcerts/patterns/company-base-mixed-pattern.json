@@ -16,7 +16,7 @@
       "type": "array",
       "description": "All relationships must conform to the Company Relationship Standard.",
       "items": {
-        "$ref": "http://your-calm.repo:8080/standards/company-relationship-standard.json"
+        "$ref": "https://your-calm.repo:8080/standards/company-relationship-standard.json"
       }
     }
   }

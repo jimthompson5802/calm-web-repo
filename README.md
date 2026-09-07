@@ -535,7 +535,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate \
 ### Start
 
 1. Copy `.env.example` to `.env`.
-2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`.
+2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`. To use the additional mixed-mode HTTPS certificate alias, also map `your-calm.repo` to the same local host.
 3. Needed for `start-webserver-authcerts`, `start-webserver-vaulting`, and `start-webserver-mixed`, assuming use of KeyCloak, set local-only values for:
    - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
@@ -575,7 +575,7 @@ Run `make stop-webserver` before switching modes to avoid port conflicts.
 `make start-webserver-authcerts` will:
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
-- run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host is not present in the certificate SANs
+- run `./scripts/generate-local-certs.sh` to create `infra/nginx/certs/localhost.crt` and `infra/nginx/certs/localhost.key` if they are missing, or regenerate them if the detected host, `my-calm.repo`, or `your-calm.repo` is not present in the certificate SANs
 - copy `infra/nginx/certs/localhost.crt` into `custom-idp/v2/certs/localhost.crt`
 - run `./scripts/render-keycloak-realm.py` to render `infra/keycloak/calm-local-realm.template.json` into `infra/keycloak/import/calm-local-realm.json` using values from `.env`
 - run `./scripts/render-direct-url-auth-config.py` to generate `custom-idp/v2/generated/direct-url-auth.json` for the local machine client
