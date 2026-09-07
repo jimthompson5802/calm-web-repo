@@ -2,12 +2,12 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "start-webserver-mixed-architecture",
   "name": "Start Webserver Mixed Architecture",
-  "description": "Runtime architecture for make start-webserver-mixed. It starts the Vault-backed, bearer-token-protected HTTPS repository endpoint and an independent unauthenticated HTTP nginx endpoint together.",
+  "description": "Runtime architecture for make start-webserver-mixed. It starts the Vault-backed, bearer-token-protected HTTPS repository endpoint and an independent unauthenticated HTTPS nginx endpoint together.",
   "metadata": {
     "environment": "local-development",
     "make-target": "start-webserver-mixed",
     "authenticated-endpoint": "https://my-calm.repo:8443",
-    "unauthenticated-endpoint": "http://my-calm.repo:8080",
+    "unauthenticated-endpoint": "https://my-calm.repo:8080",
     "auth-example": "custom-idp/v3"
   },
   "nodes": [
@@ -15,7 +15,7 @@
       "unique-id": "repository-user",
       "node-type": "actor",
       "name": "Architect",
-      "description": "A local operator who starts the mixed stack and requests CALM artifacts from either the authenticated HTTPS or unauthenticated HTTP endpoint.",
+      "description": "A local operator who starts the mixed stack and requests CALM artifacts from either the authenticated or unauthenticated HTTPS endpoint.",
       "environment": "local-development"
     },
     {
@@ -35,7 +35,7 @@
     {
       "unique-id": "unauthenticated-static-content",
       "node-type": "data-asset",
-      "name": "Static Content Tree (HTTP)",
+      "name": "Static Content Tree (Anonymous HTTPS)",
       "description": "The static_http repository content tree mounted read-only into nginx-noauth and served without authentication.",
       "environment": "local-development"
     },
@@ -43,7 +43,7 @@
       "unique-id": "tls-certificate-assets",
       "node-type": "data-asset",
       "name": "TLS Certificate Bundle",
-      "description": "The generated local certificate and private key mounted into authenticated nginx for TLS termination and into oauth2-proxy for issuer trust.",
+      "description": "The generated local certificate and private key mounted into both nginx services for TLS termination and into oauth2-proxy for issuer trust.",
       "environment": "local-development"
     },
     {
@@ -78,11 +78,11 @@
       "unique-id": "noauth-nginx",
       "node-type": "service",
       "name": "Unauthenticated Nginx",
-      "description": "The independent nginx-noauth Compose service that serves static_http and the anonymous /healthz endpoint over HTTP on port 8080.",
+      "description": "The independent nginx-noauth Compose service that serves static_http and the anonymous /healthz endpoint over HTTPS on port 8080.",
       "environment": "local-development",
       "interfaces": [
         {
-          "unique-id": "noauth-nginx-http",
+          "unique-id": "noauth-nginx-https",
           "host": "my-calm.repo",
           "port": 8080
         }
@@ -134,7 +134,7 @@
       "unique-id": "your-calm-repo-container",
       "node-type": "container",
       "name": "YOUR-CALM.REPO",
-      "description": "The unauthenticated HTTP runtime within the mixed Compose startup.",
+      "description": "The unauthenticated HTTPS runtime within the mixed Compose startup.",
       "environment": "local-development"
     },
     {
@@ -211,8 +211,8 @@
     },
     {
       "unique-id": "calm-cli-to-noauth-nginx",
-      "description": "The CALM CLI can request public repository content or /healthz through the independent HTTP endpoint without authentication.",
-      "protocol": "HTTP",
+      "description": "The CALM CLI can request public repository content or /healthz through the independent HTTPS endpoint without authentication.",
+      "protocol": "HTTPS",
       "relationship-type": {
         "connects": {
           "source": {"node": "calm-cli"},
@@ -246,6 +246,16 @@
       "relationship-type": {
         "connects": {
           "source": {"node": "authenticated-nginx"},
+          "destination": {"node": "tls-certificate-assets"}
+        }
+      }
+    },
+    {
+      "unique-id": "noauth-nginx-to-tls-assets",
+      "description": "Unauthenticated nginx terminates HTTPS with the generated local TLS certificate and private key.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "noauth-nginx"},
           "destination": {"node": "tls-certificate-assets"}
         }
       }
@@ -317,10 +327,10 @@
     },
     {
       "unique-id": "fetch-public-content",
-      "name": "Fetch Public HTTP Content",
-      "description": "An operator directly fetches static_http content or the anonymous health endpoint through the independent HTTP nginx service; this path does not involve Vault, Keycloak, or oauth2-proxy.",
+      "name": "Fetch Public HTTPS Content",
+      "description": "An operator directly fetches static_http content or the anonymous health endpoint through the independent HTTPS nginx service; this path does not involve Vault, Keycloak, or oauth2-proxy.",
       "transitions": [
-        {"relationship-unique-id": "calm-cli-to-noauth-nginx", "sequence-number": 1, "description": "The CALM CLI requests public content or /healthz over HTTP."},
+        {"relationship-unique-id": "calm-cli-to-noauth-nginx", "sequence-number": 1, "description": "The CALM CLI requests public content or /healthz over HTTPS."},
         {"relationship-unique-id": "noauth-nginx-to-unauthenticated-content", "sequence-number": 2, "description": "nginx-noauth reads the requested artifact from static_http."}
       ]
     }

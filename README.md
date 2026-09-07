@@ -180,12 +180,12 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 
 The startup flow also copies the generated `infra/nginx/certs/localhost.crt` file into `custom-idp/v3/certs/localhost.crt`.
 
-### `start-webserver-mixed` (Vault-backed HTTPS and unauthenticated HTTP)
+### `start-webserver-mixed` (Vault-backed HTTPS and unauthenticated HTTPS)
 
 `start-webserver-mixed` runs `start-webserver-vaulting`, then starts a second nginx service named `nginx-noauth`. Both endpoints are available together:
 
 - `https://<host>:8443` serves `static_authcerts/` with bearer-token authentication.
-- `http://<host>:8080` serves `static_http/` without authentication, including `/architectures/calm-1.json` and the anonymous `/healthz` endpoint.
+- `https://<host>:8080` serves `static_http/` without authentication, including `/architectures/calm-1.json` and the anonymous `/healthz` endpoint.
 
 **To test run following bash script**:
 
@@ -207,7 +207,7 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 
 
 
-The HTTP service mounts `static_http/` read-only at `/usr/share/nginx/html` and reuses the existing noauth nginx configuration. Its mounts and port are fixed independently of the authenticated nginx service's environment overrides.
+The anonymous HTTPS service mounts `static_http/` and the generated local TLS certificate bundle read-only, then reuses the existing noauth nginx configuration. Its mounts and port are fixed independently of the authenticated nginx service's environment overrides.
 
 Mixed mode inherits the Vault setup, generated v3 auth configuration and certificates, and `~/.calm.json` symlink to `~/.calmvaulting.json`. Use the same prerequisites and HTTPS client setup as vaulting mode.
 
@@ -477,7 +477,7 @@ Notes:
 - `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://my-calm.repo:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make start-webserver-vaulting` reuses the authcerts HTTPS stack, starts a local Vault dev server, seeds the machine-client secret, and generates the `custom-idp/v3` config.
-- `make start-webserver-mixed` starts the Vault-backed HTTPS stack on `https://<host>:8443` and an independent noauth nginx service serving `static_http/` on `http://<host>:8080`.
+- `make start-webserver-mixed` starts the Vault-backed HTTPS stack on `https://<host>:8443` and an independent noauth nginx service serving `static_http/` anonymously on `https://<host>:8080`.
 - Both auth-enabled direct URL targets copy `infra/nginx/certs/localhost.crt` into the matching example cert directory for local CLI trust setup.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 
@@ -496,7 +496,7 @@ Notes:
 
 ## Example `calm validate` commands
 
-`make start-webserver-noauth` serves CALM artifacts over `http://my-calm.repo:8080` with only the `allowedRemoteHosts` protection. `make start-webserver-authonly` adds authentication protection by requiring a hard-code `Header` with `Authorization: XYZ` and uses `http://my-calm.repo:8080`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443` along with `allowedRemoteHosts` protection. `make start-webserver-vaulting` serves the same HTTPS stack, but uses the Vault-backed `custom-idp/v3` example for the machine-client secret. `make start-webserver-mixed` makes that Vault-backed HTTPS endpoint and the unauthenticated HTTP endpoint available together.
+`make start-webserver-noauth` serves CALM artifacts over `http://my-calm.repo:8080` with only the `allowedRemoteHosts` protection. `make start-webserver-authonly` adds authentication protection by requiring a hard-code `Header` with `Authorization: XYZ` and uses `http://my-calm.repo:8080`. `make start-webserver-authcerts` serves authenticated static content through the HTTPS Keycloak-backed stack on `https://my-calm.repo:8443` along with `allowedRemoteHosts` protection. `make start-webserver-vaulting` serves the same HTTPS stack, but uses the Vault-backed `custom-idp/v3` example for the machine-client secret. `make start-webserver-mixed` makes that Vault-backed HTTPS endpoint and the unauthenticated HTTPS endpoint available together.
 
 Sample commands after `make-start-noauth` and `make start-webserver-authonly`:
 
@@ -599,7 +599,7 @@ Run `make stop-webserver` before switching modes to avoid port conflicts.
 - start `vault`, `keycloak`, `oauth2-proxy`, and `nginx`
 - serve repository content only through bearer-token-authenticated HTTPS
 
-`make start-webserver-mixed` will run all the vaulting steps above, then start `nginx-noauth` to serve `static_http/` without authentication over HTTP on port `8080`, alongside authenticated HTTPS on port `8443`.
+`make start-webserver-mixed` will run all the vaulting steps above, then start `nginx-noauth` to serve `static_http/` without authentication over HTTPS on port `8080`, alongside authenticated HTTPS on port `8443`.
 
 If you need a cookie secret, generate one with:
 

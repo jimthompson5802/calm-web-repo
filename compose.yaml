@@ -30,6 +30,7 @@ services:
       - 8080:8080
     volumes:
       - ./infra/nginx/nginx.noauth.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
       - ./static_http:/usr/share/nginx/html:ro
     restart: unless-stopped
   oauth2-proxy:

@@ -58,7 +58,7 @@ start-webserver-vaulting:
 		CALM_STATIC_CONTENT_PATH=./static_authcerts docker-compose up -d keycloak oauth2-proxy nginx vault
 
 
-# start the Vault-backed auth stack alongside an unauthenticated HTTP server
+# start the Vault-backed auth stack alongside an unauthenticated HTTPS server
 start-webserver-mixed: start-webserver-vaulting
 	docker-compose up -d --no-deps nginx-noauth
 
