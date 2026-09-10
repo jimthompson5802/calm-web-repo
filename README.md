@@ -14,7 +14,17 @@ For local testing purposes, after building the `calm cli` with support for the `
 The `make` startup targets do more than launch the local web stack variants. They also keep `~/.calm.json` aligned with the active test setup by repointing that symlink to the scenario-specific CALM CLI config before each stack starts. See [Setup test configuration specific `.calm.json` files](#setup-test-configuration-specific-calmjson-files) for details.
 
 ### `start-webserver-noauth`  (Baseline No Authentication)
-`start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over plain HTTP on port `8080`, i.e., `http://my-calm.repo:8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps the health endpoint anonymously available for basic checks.
+`start-webserver-noauth` models the simplest local serving path: an nginx container exposes the `static_http/` content tree over HTTPS on port `8080`, at `https://<host>:8080`. This architecture excludes `oauth2-proxy` and Keycloak, and keeps `/healthz` anonymously available for basic checks.
+
+The target resolves `<host>` from `CALM_PUBLIC_HOST` in the shell or `.env`, falling back to the detected local IP (or `localhost`), repoints `~/.calm.json` to `~/.calmnoauth.json`, and starts only nginx with the noauth TLS configuration and `8080:8080` port mapping. Because this mode uses the local self-signed certificate, configure the CLI to trust it before validating artifacts:
+
+```bash
+# Preferred: trust the local certificate.
+export NODE_EXTRA_CA_CERTS=infra/nginx/certs/localhost.crt
+
+# Alternative for local testing only: disable certificate validation.
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+```
 
 **To test run following bash script**:
 
