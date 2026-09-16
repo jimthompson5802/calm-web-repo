@@ -483,6 +483,7 @@ Notes:
 
 ## Commands
 
+- `eval "$(make set-env-variables)"` exports the fixed local `custom-idp/v3` direct-URL-auth configuration into the current shell. `eval "$(make unset-env-variables)"` removes those three variables. The Makefile does not read `~/.calmvaulting.json` at runtime.
 - `make start-webserver-noauth` mounts `static_http/` directly into `nginx` and starts it on `http://<host>:8080`.
 - `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://my-calm.repo:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.

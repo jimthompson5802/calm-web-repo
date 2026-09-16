@@ -1,4 +1,16 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting start-webserver-mixed stop-webserver _prepare-calm-config
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting start-webserver-mixed stop-webserver set-env-variables unset-env-variables _prepare-calm-config
+
+set-env-variables:
+	@printf '%s\n' \
+		"export CALM_DIRECT_URL_AUTH_MODULE='~/Desktop/finos/calm-web-repo/custom-idp/v3/dist/direct-url-auth.js'" \
+		"export CALM_DIRECT_URL_AUTH_CONFIG_PATH='~/Desktop/finos/calm-web-repo/custom-idp/v3/generated/direct-url-auth.json'" \
+		"export CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS='my-calm.repo'"
+
+unset-env-variables:
+	@printf '%s\n' \
+		'unset CALM_DIRECT_URL_AUTH_MODULE' \
+		'unset CALM_DIRECT_URL_AUTH_CONFIG_PATH' \
+		'unset CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS'
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
