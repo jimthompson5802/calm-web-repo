@@ -1,6 +1,6 @@
 #!/bin/bash
 
-base_url_host="${1:-http://my-calm.repo:8080}"
+base_url_host="${1:-https://my-calm.repo:8443}"
 
 trace_on() {
   set -x
