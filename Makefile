@@ -1,16 +1,4 @@
-.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting start-webserver-mixed stop-webserver set-env-variables unset-env-variables _prepare-calm-config
-
-set-env-variables:
-	@printf '%s\n' \
-		"export CALM_DIRECT_URL_AUTH_MODULE='~/Desktop/finos/calm-web-repo/custom-idp/v3/dist/direct-url-auth.js'" \
-		"export CALM_DIRECT_URL_AUTH_CONFIG_PATH='~/Desktop/finos/calm-web-repo/custom-idp/v3/generated/direct-url-auth.json'" \
-		"export CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS='my-calm.repo'"
-
-unset-env-variables:
-	@printf '%s\n' \
-		'unset CALM_DIRECT_URL_AUTH_MODULE' \
-		'unset CALM_DIRECT_URL_AUTH_CONFIG_PATH' \
-		'unset CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS'
+.PHONY: start-webserver-noauth start-webserver-authonly start-webserver-authcerts start-webserver-vaulting start-webserver-mixed stop-webserver start-webserver-mixedenv _prepare-calm-config
 
 _prepare-calm-config:
 	@test -n "$(CALM_CONFIG_SOURCE)"
@@ -74,6 +62,8 @@ start-webserver-vaulting:
 start-webserver-mixed: start-webserver-vaulting
 	docker-compose up -d --no-deps nginx-noauth
 
+start-webserver-mixedenv: start-webserver-mixed
+	$(MAKE) CALM_CONFIG_SOURCE="$$HOME/.calmnoauth.json" _prepare-calm-config; 
 
 # stop the nginx servers and remove compose resources
 stop-webserver:

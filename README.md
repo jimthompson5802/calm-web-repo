@@ -221,6 +221,8 @@ The anonymous HTTPS service mounts `static_http/` and the generated local TLS ce
 
 Mixed mode inherits the Vault setup, generated v3 auth configuration and certificates, and `~/.calm.json` symlink to `~/.calmvaulting.json`. Use the same prerequisites and HTTPS client setup as vaulting mode.
 
+Use `make start-webserver-mixedenv` when the mixed stack should start with the no-auth CALM CLI configuration active instead. It runs mixed mode, then repoints `~/.calm.json` to `~/.calmnoauth.json`.  This is used for testing the use of environment variables for Direct URL authenticated access.
+
 Stop an existing mode before switching to avoid port conflicts, particularly on `8080`:
 
 ```
@@ -483,12 +485,13 @@ Notes:
 
 ## Commands
 
-- `eval "$(make set-env-variables)"` exports the fixed local `custom-idp/v3` direct-URL-auth configuration into the current shell. `eval "$(make unset-env-variables)"` removes those three variables. The Makefile does not read `~/.calmvaulting.json` at runtime.
+- `source ./scripts/set-env-variables.sh` exports the fixed local `custom-idp/v3` direct-URL-auth configuration into the current shell. `source ./scripts/unset-env-variables.sh` removes those three variables. The Makefile does not read `~/.calmvaulting.json` at runtime.
 - `make start-webserver-noauth` mounts `static_http/` directly into `nginx` and starts it on `http://<host>:8080`.
 - `make start-webserver-authonly` repoints `~/.calm.json` to `~/.calmauthonly.json`, mounts `static_http/` directly into the `apps/pyweb` container, and starts it through Docker Compose on `http://my-calm.repo:8080`.
 - `make start-webserver-authcerts` generates local TLS/auth assets, mounts `static_authcerts/` directly into `nginx`, and starts the full auth stack in detached mode.
 - `make start-webserver-vaulting` reuses the authcerts HTTPS stack, starts a local Vault dev server, seeds the machine-client secret, and generates the `custom-idp/v3` config.
 - `make start-webserver-mixed` starts the Vault-backed HTTPS stack on `https://<host>:8443` and an independent noauth nginx service serving `static_http/` anonymously on `https://<host>:8080`.
+- `make start-webserver-mixedenv` starts mixed mode, then repoints `~/.calm.json` to `~/.calmnoauth.json` for no-auth CLI requests.
 - Both auth-enabled direct URL targets copy `infra/nginx/certs/localhost.crt` into the matching example cert directory for local CLI trust setup.
 - `make stop-webserver` stops Compose-managed local web services and removes the Compose resources.
 
@@ -563,6 +566,7 @@ make start-webserver-authonly
 make start-webserver-authcerts
 make start-webserver-vaulting
 make start-webserver-mixed
+make start-webserver-mixedenv
 ```
 
 Run `make stop-webserver` before switching modes to avoid port conflicts.
@@ -612,6 +616,8 @@ Run `make stop-webserver` before switching modes to avoid port conflicts.
 
 `make start-webserver-mixed` will run all the vaulting steps above, then start `nginx-noauth` to serve `static_http/` without authentication over HTTPS on port `8080`, alongside authenticated HTTPS on port `8443`.
 
+`make start-webserver-mixedenv` runs `make start-webserver-mixed`, then repoints `~/.calm.json` to `~/.calmnoauth.json`. Use it when validating the no-auth endpoint after starting both services.  For authenticated access, use `source ./scripts/set-env-variables.sh` to set up the required `cli` configurations as environment variables.
+
 If you need a cookie secret, generate one with:
 
 ```sh
@@ -651,8 +657,25 @@ Each startup target now selects the active CALM CLI config by repointing `~/.cal
 - `make start-webserver-authcerts` -> `~/.calmauthcerts.json`
 - `make start-webserver-vaulting` -> `~/.calmvaulting.json`
 - `make start-webserver-mixed` -> `~/.calmvaulting.json`
+- `make start-webserver-mixedenv` -> `~/.calmnoauth.json`
 
 If `~/.calm.json` is already a symlink, the target replaces it. If it exists as a regular file, startup fails instead of overwriting it.
+
+### Shell environment helpers
+
+The environment helpers configure the CALM CLI's environment-based direct URL auth settings for the local Vault-backed `custom-idp/v3` example:
+
+```sh
+source ./scripts/set-env-variables.sh
+```
+
+This exports `CALM_DIRECT_URL_AUTH_MODULE`, `CALM_DIRECT_URL_AUTH_CONFIG_PATH`, and `CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS`. To remove them from the current shell, run:
+
+```sh
+source ./scripts/unset-env-variables.sh
+```
+
+They must be sourced (rather than executed) because child processes cannot change the environment of the invoking shell.
 
 For `make start-webserver-authcerts`, point `~/.calmauthcerts.json` at the built module and the generated local config:
 
