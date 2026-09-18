@@ -140,9 +140,9 @@ test("reads the client secret from Vault and requests a client-credentials token
   });
 });
 
-test("returns no headers and makes no auth requests for a non-CALM URL", async () => {
+test("returns an auth header when invoked for the this-calm.repo alias", async () => {
   await withTempDir(async (root) => {
-    const configPath = path.join(root, "unused-direct-url-auth.json");
+    const configPath = await writeConfig(root);
     const plugin = new DirectUrlAuthPlugin(configPath);
     let httpCalls = 0;
     let httpsCalls = 0;
@@ -150,21 +150,29 @@ test("returns no headers and makes no auth requests for a non-CALM URL", async (
     await withMockRequests({
       httpHandler: () => {
         httpCalls += 1;
-        throw new Error("Vault should not be called");
+        return {
+          body: JSON.stringify({
+            data: {
+              data: {
+                clientSecret: "top-secret",
+              },
+            },
+          }),
+        };
       },
       httpsHandler: () => {
         httpsCalls += 1;
-        throw new Error("OAuth should not be called");
+        return { body: JSON.stringify({ access_token: "token-456", expires_in: 300 }) };
       },
     }, async () => {
       assert.deepEqual(
-        await plugin.getAuthHeaders("https://my-calm.repo:8444/architectures/calm-1.json"),
-        {},
+        await plugin.getAuthHeaders("https://this-calm.repo:8443/architectures/calm-1.json"),
+        { Authorization: "Bearer token-456" },
       );
     });
 
-    assert.equal(httpCalls, 0);
-    assert.equal(httpsCalls, 0);
+    assert.equal(httpCalls, 1);
+    assert.equal(httpsCalls, 1);
   });
 });
 

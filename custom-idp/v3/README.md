@@ -8,7 +8,7 @@ The plugin exports a class that implements:
 getAuthHeaders(url: string, requestBody: unknown): Promise<Record<string, string>>
 ```
 
-It gets an OAuth client-credentials token and returns it as an `Authorization` header only for URLs that begin with the exact, case-sensitive prefix `https://my-calm.repo:8443/`. For all other URLs, it returns an empty header object and does not read the config, Vault secret, or OAuth token. The OAuth client secret is read from HashiCorp Vault instead of being stored inline in the auth JSON.
+It gets an OAuth client-credentials token and returns it as an `Authorization` header when CALM invokes the module. The CALM CLI determines which hosts invoke the module through `allowedRemoteHosts` or `CALM_DIRECT_URL_AUTH_AUTHENTICATED_HOSTS`; the module itself does not filter request URLs. For the local Vaulting stack, configure both `my-calm.repo` and `this-calm.repo` as authenticated hosts, while retaining `my-calm.repo` as the canonical Keycloak token endpoint. The OAuth client secret is read from HashiCorp Vault instead of being stored inline in the auth JSON.
 
 ## Config
 

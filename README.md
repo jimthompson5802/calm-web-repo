@@ -136,7 +136,7 @@ export NODE_TLS_REJECT_UNAUTHORIZED=0
 The startup flow also copies the generated `infra/nginx/certs/localhost.crt` file into `custom-idp/v2/certs/localhost.crt`.
 
 ### `start-webserver-vaulting` (Oauth2 client-credential authentication with Vault)
-`start-webserver-vaulting` builds on the same HTTPS Keycloak stack as `start-webserver-authcerts`, but seeds the local Keycloak machine-client secret into a HashiCorp Vault dev server and generates a `custom-idp/v3` config that reads the secret from Vault.
+`start-webserver-vaulting` builds on the same HTTPS Keycloak stack as `start-webserver-authcerts`, but seeds the local Keycloak machine-client secret into a HashiCorp Vault dev server and generates a `custom-idp/v3` config that reads the secret from Vault. The canonical Keycloak issuer and token endpoint remain `my-calm.repo`; the resulting bearer token authorizes protected content from both `my-calm.repo` and `this-calm.repo`.
 
 **To test run following bash script**:
 
@@ -150,6 +150,7 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 # export NODE_TLS_REJECT_UNAUTHORIZED=0
 
 ./scripts/validate-architecture.sh https://my-calm.repo:8443
+./scripts/validate-architecture.sh https://this-calm.repo:8443
 ```
 
 [CALM Architecture JSON](docs/architecture/start-webserver-vaulting.architecture.json)
@@ -166,7 +167,8 @@ The startup flow also copies the generated `infra/nginx/certs/localhost.crt` fil
 {
   "allowedRemoteHosts":[
     "my-calm.repo",
-    "your-calm.repo"
+    "your-calm.repo",
+    "this-calm.repo"
   ],
   "directUrlAuth": {
     "module": "~/Desktop/finos/calm-web-repo/custom-idp/v3/dist/direct-url-auth.js",
@@ -456,7 +458,7 @@ Use this file for `make start-webserver-vaulting`.
 
 ```json
 {
-  "allowedRemoteHosts": ["my-calm.repo", "localhost"],
+  "allowedRemoteHosts": ["my-calm.repo", "this-calm.repo", "localhost"],
   "directUrlAuth": {
     "module": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v3/dist/direct-url-auth.js",
     "configPath": "/ABSOLUTE/PATH/TO/calm-web-repo/custom-idp/v3/generated/direct-url-auth.json"
@@ -474,9 +476,9 @@ npm install
 npm run build
 ```
 
-Notes:
+ Notes:
 
-- This mode serves protected content through HTTPS on `https://my-calm.repo:8443`.
+- This mode serves protected content through HTTPS on both `https://my-calm.repo:8443` and `https://this-calm.repo:8443`; its Keycloak issuer and generated token URL remain `https://my-calm.repo:8443`.
 - It uses the same Keycloak and `oauth2-proxy` stack as `start-webserver-authcerts`.
 - The `directUrlAuth.module` value must point to the built JavaScript output, not the TypeScript source.
 - The `directUrlAuth.configPath` value must point to the generated JSON written by `./scripts/render-direct-url-auth-vault-config.py`.
@@ -549,7 +551,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 calm validate \
 ### Start
 
 1. Copy `.env.example` to `.env`.
-2. Ensure your local resolver maps `my-calm.repo` to `127.0.0.1`. To use the additional mixed-mode HTTPS certificate alias, also map `your-calm.repo` to the same local host.
+2. Ensure your local resolver maps both `my-calm.repo` and `this-calm.repo` to `127.0.0.1`. To use the existing additional mixed-mode HTTPS certificate alias, also map `your-calm.repo` to the same local host.
 3. Needed for `start-webserver-authcerts`, `start-webserver-vaulting`, and `start-webserver-mixed`, assuming use of KeyCloak, set local-only values for:
    - `CALM_PUBLIC_HOST`
    - `KC_BOOTSTRAP_ADMIN_PASSWORD`
@@ -603,7 +605,7 @@ Run `make stop-webserver` before switching modes to avoid port conflicts.
 `make start-webserver-vaulting` will:
 
 - resolve `CALM_PUBLIC_HOST` from the shell, `.env`, or the current auto-detected local IP and export it for the startup sequence
-- run `./scripts/generate-local-certs.sh` to create or refresh the local HTTPS certificates
+- run `./scripts/generate-local-certs.sh` to create or refresh the local HTTPS certificates, including SANs for `my-calm.repo` and `this-calm.repo`
 - copy `infra/nginx/certs/localhost.crt` into `custom-idp/v3/certs/localhost.crt`
 - run `./scripts/render-keycloak-realm.py` to render the local Keycloak realm import from `.env`
 - repoint `~/.calm.json` to `~/.calmvaulting.json`, removing a prior symlink and failing if `~/.calm.json` exists as a regular file
@@ -612,7 +614,7 @@ Run `make stop-webserver` before switching modes to avoid port conflicts.
 - run `./scripts/render-direct-url-auth-vault-config.py` to generate `custom-idp/v3/generated/direct-url-auth.json`
 - mount `static_authcerts/` directly into `nginx`
 - start `vault`, `keycloak`, `oauth2-proxy`, and `nginx`
-- serve repository content only through bearer-token-authenticated HTTPS
+- serve repository content only through bearer-token-authenticated HTTPS at both `my-calm.repo` and `this-calm.repo`, using `my-calm.repo` as the canonical Keycloak issuer and token endpoint
 
 `make start-webserver-mixed` will run all the vaulting steps above, then start `nginx-noauth` to serve `static_http/` without authentication over HTTPS on port `8080`, alongside authenticated HTTPS on port `8443`.
 
@@ -693,7 +695,7 @@ For `make start-webserver-vaulting`, point `~/.calmvaulting.json` at the built m
 
 ```json
 {
-  "allowedRemoteHosts": ["my-calm.repo", "localhost"],
+  "allowedRemoteHosts": ["my-calm.repo", "this-calm.repo", "localhost"],
   "directUrlAuth": {
     "module": "/absolute/path/to/setup-keycloak-web/custom-idp/v3/dist/direct-url-auth.js",
     "configPath": "/absolute/path/to/setup-keycloak-web/custom-idp/v3/generated/direct-url-auth.json"
@@ -733,6 +735,7 @@ Then protected documents can be fetched non-interactively, for example:
 
 ```sh
 calm validate -a https://my-calm.repo:8443/architectures/calm-1.json
+calm validate -a https://this-calm.repo:8443/architectures/calm-1.json
 ```
 
 ### Stop
