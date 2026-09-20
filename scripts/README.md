@@ -2,6 +2,35 @@
 
 Helper scripts for the local `setup-keycloak-web` stack.
 
+## Export the Vault-backed direct-URL config
+
+After `make start-webserver-vaulting` generates
+`custom-idp/v3/generated/direct-url-auth.json`, source the helper from any
+directory:
+
+```sh
+source /path/to/setup-keycloak-web/scripts/set-env-directurl-config.sh
+```
+
+It requires `jq` and exports these fields from the generated config:
+
+| JSON field | Environment variable |
+| --- | --- |
+| `tokenUrl` | `DIRECT_URL_CONFIG_TOKEN_URL` |
+| `clientId` | `DIRECT_URL_CONFIG_CLIENT_ID` |
+| `vaultUrl` | `DIRECT_URL_CONFIG_VAULT_URL` |
+| `vaultToken` | `DIRECT_URL_CONFIG_VAULT_TOKEN` |
+| `vaultSecretPath` | `DIRECT_URL_CONFIG_VAULT_SECRET_PATH` |
+| `vaultSecretField` | `DIRECT_URL_CONFIG_VAULT_SECRET_FIELD` |
+
+The Vault token is exported into the current shell's process environment; do
+not expose that environment to untrusted processes. Remove the values when
+finished:
+
+```sh
+source /path/to/setup-keycloak-web/scripts/unset-env-directurl-config.sh
+```
+
 ## Test client-credentials with `curl`
 
 After `make start-webserver-authcerts`, you can test the local Keycloak machine client and the protected static content without CALM CLI.
