@@ -25,7 +25,26 @@ Use `config/direct-url-auth.json` as the starting point:
 }
 ```
 
-`configPath` is required when Calm loads the plugin.
+`configPath` is required when Calm loads this JSON-backed plugin.
+
+## Environment configuration
+
+`dist/direct-url-env-auth.js` is a separate plugin entry point that reads its
+configuration from the process environment and does not use `configPath`.
+Configure Calm to load that module, then export:
+
+| Environment variable | Purpose |
+| --- | --- |
+| `DIRECT_URL_CONFIG_TOKEN_URL` | OAuth token endpoint |
+| `DIRECT_URL_CONFIG_CLIENT_ID` | OAuth client ID |
+| `DIRECT_URL_CONFIG_VAULT_URL` | Vault base URL |
+| `DIRECT_URL_CONFIG_VAULT_TOKEN` | Vault authentication token |
+| `DIRECT_URL_CONFIG_VAULT_SECRET_PATH` | Vault KV v2 secret path |
+| `DIRECT_URL_CONFIG_VAULT_SECRET_FIELD` | Optional secret field; defaults to `clientSecret` |
+
+For the local generated configuration, source
+`scripts/set-env-directurl-config.sh` from the repository root before
+invoking Calm. Do not configure a `configPath` for this module.
 
 The local `start-webserver-vaulting` stack seeds the Keycloak machine-client secret into a Vault dev server at `secret/data/calm/direct-url` and generates `generated/direct-url-auth.json` with the local token endpoint and Vault lookup settings.
 

@@ -11,6 +11,7 @@
     "strict": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/direct-url-auth.ts",
+    "src/direct-url-env-auth.ts"
   ]
 }
