@@ -2,6 +2,31 @@
 
 Helper scripts for the local `setup-keycloak-web` stack.
 
+## Configure CALM CLI direct URL auth
+
+Run this from the repository root after generating the Vault-backed v3
+configuration and building its module:
+
+```sh
+make start-webserver-vaulting
+(cd custom-idp/v3 && npm run build)
+./scripts/calm-init-config.sh
+```
+
+The helper runs `calm init-config` to create or update `~/.calm.json` with:
+
+- `your-calm.repo` as the allowed remote host;
+- `custom-idp/v3/dist/direct-url-auth.js` as the JSON-backed direct-URL auth
+  module;
+- `custom-idp/v3/generated/direct-url-auth.json` as that module's
+  configuration file; and
+- `my-calm.repo,this-calm.repo` as the hosts that require direct-URL
+  authentication.
+
+The repository Makefile manages `~/.calm.json` as a scenario-specific
+symlink. Do not run this helper when you need to preserve a Makefile-managed
+configuration.
+
 ## Export the Vault-backed direct-URL config
 
 After `make start-webserver-vaulting` generates
